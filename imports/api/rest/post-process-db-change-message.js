@@ -43,6 +43,8 @@ export default (req, res) => {
         console.error(`An error occurred while sending an email to ${emailAddr}`)
       }
       break
+    default:
+      console.log("Unimplemented type:", type)
   }
   res.send(200)
 }

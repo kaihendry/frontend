@@ -38,13 +38,13 @@ export default (req, res) => {
           html: emailContent.html,
           text: emailContent.text
         })
-        console.log("Sent", emailAddr, "notification type:", type)
+        console.log('Sent', emailAddr, 'notification type:', type)
       } catch (e) {
         console.error(`An error occurred while sending an email to ${emailAddr}`)
       }
       break
     default:
-      console.log("Unimplemented type:", type)
+      console.log('Unimplemented type:', type)
   }
   res.send(200)
 }

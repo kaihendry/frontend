@@ -31,13 +31,10 @@ export default (req, res) => {
       const emailAddr = invitee.emails[0].address
       const emailContent = emailTemplate(invitee, caseTitle, caseId)
       try {
-        Email.send({
+        Email.send(Object.assign({
           to: emailAddr,
-          from: process.env.FROM_EMAIL,
-          subject: emailContent.subject,
-          html: emailContent.html,
-          text: emailContent.text
-        })
+          from: process.env.FROM_EMAIL
+        }, emailContent))
         console.log('Sent', emailAddr, 'notification type:', type)
       } catch (e) {
         console.error(`An error occurred while sending an email to ${emailAddr}`)

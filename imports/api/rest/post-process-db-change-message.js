@@ -1,7 +1,8 @@
 import { Meteor } from 'meteor/meteor'
 import { Email } from 'meteor/email'
 import MessagePayloads from '../message-payloads'
-import emailTemplate from '../../email-templates/user-invited-to-case'
+import caseUserInvitedTemplate from '../../email-templates/user-invited-to-case'
+import caseAssigneeUpdateTemplate from '../../email-templates/case-assignee-updated'
 
 export default (req, res) => {
   if (req.query.accessToken !== process.env.API_ACCESS_TOKEN) {
@@ -16,20 +17,28 @@ export default (req, res) => {
 
   const {
     notification_type: type,
-    invitee_user_id: inviteeId,
     case_title: caseTitle,
     case_id: caseId
   } = message
 
+  var emailAddr, emailContent
+
   switch (type) {
-    case 'case_user_invited':
-      const invitee = Meteor.users.findOne({'bugzillaCreds.id': parseInt(inviteeId)})
-      if (!invitee) {
-        console.error('Could deliver message to missing user of BZ ID: ' + inviteeId)
+    case 'case_assignee_updated':
+      // https://github.com/unee-t/sns2email/issues/2
+      // When the user assigned to a case change, we need to inform the person who is the new assignee to that case.
+
+      const {
+        assignee_user_id: assigneeId
+      } = message
+
+      const assignee = Meteor.users.findOne({'bugzillaCreds.id': parseInt(assigneeId)})
+      if (!assignee) {
+        console.error('Could deliver message to missing user of BZ ID: ' + assigneeId)
         return
       }
-      const emailAddr = invitee.emails[0].address
-      const emailContent = emailTemplate(invitee, caseTitle, caseId)
+      emailAddr = assignee.emails[0].address
+      emailContent = caseAssigneeUpdateTemplate(assignee, caseTitle, caseId)
       try {
         Email.send(Object.assign({
           to: emailAddr,
@@ -37,7 +46,32 @@ export default (req, res) => {
         }, emailContent))
         console.log('Sent', emailAddr, 'notification type:', type)
       } catch (e) {
-        console.error(`An error occurred while sending an email to ${emailAddr}`)
+        console.error(`An error ${e} occurred while sending an email to ${emailAddr}`)
+      }
+
+      break
+
+    case 'case_user_invited':
+
+      const {
+        invitee_user_id: inviteeId
+      } = message
+
+      const invitee = Meteor.users.findOne({'bugzillaCreds.id': parseInt(inviteeId)})
+      if (!invitee) {
+        console.error('Could deliver message to missing user of BZ ID: ' + inviteeId)
+        return
+      }
+      emailAddr = invitee.emails[0].address
+      emailContent = caseUserInvitedTemplate(invitee, caseTitle, caseId)
+      try {
+        Email.send(Object.assign({
+          to: emailAddr,
+          from: process.env.FROM_EMAIL
+        }, emailContent))
+        console.log('Sent', emailAddr, 'notification type:', type)
+      } catch (e) {
+        console.error(`An error ${e} occurred while sending an email to ${emailAddr}`)
       }
       break
     default:

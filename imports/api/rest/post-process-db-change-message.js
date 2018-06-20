@@ -14,6 +14,11 @@ export default (req, res) => {
   const message = req.body
   console.log('Incoming to /api/db-change-message/process', message)
 
+  if (MessagePayloads.findOne({notification_id: message.notification_id})) {
+    res.send(400, `Duplicate message ${message.notification_id}`)
+    return
+  }
+
   MessagePayloads.insert(message)
 
   const {
@@ -22,82 +27,52 @@ export default (req, res) => {
     case_id: caseId
   } = message
 
-  var emailAddr, emailContent, assigneeId, assignee
+  let userId, templateFunction
 
   switch (type) {
     case 'case_new':
       // https://github.com/unee-t/sns2email/issues/1
       // When a new case is created, we need to inform the person who is assigned to that case.
-
-      assigneeId = message.assignee_user_id
-      assignee = Meteor.users.findOne({'bugzillaCreds.id': parseInt(assigneeId)})
-      if (!assignee) {
-        console.error('Could deliver message to missing user of BZ ID: ' + assigneeId)
-        return
-      }
-      emailAddr = assignee.emails[0].address
-      emailContent = caseNewTemplate(assignee, caseTitle, caseId)
-      try {
-        Email.send(Object.assign({
-          to: emailAddr,
-          from: process.env.FROM_EMAIL
-        }, emailContent))
-        console.log('Sent', emailAddr, 'notification type:', type)
-      } catch (e) {
-        console.error(`An error ${e} occurred while sending an email to ${emailAddr}`)
-      }
-
+      userId = message.assignee_user_id
+      templateFunction = caseNewTemplate
       break
 
     case 'case_assignee_updated':
       // https://github.com/unee-t/sns2email/issues/2
       // When the user assigned to a case change, we need to inform the person who is the new assignee to that case.
-
-      assigneeId = message.assignee_user_id
-      assignee = Meteor.users.findOne({'bugzillaCreds.id': parseInt(assigneeId)})
-      if (!assignee) {
-        console.error('Could deliver message to missing user of BZ ID: ' + assigneeId)
-        return
-      }
-      emailAddr = assignee.emails[0].address
-      emailContent = caseAssigneeUpdateTemplate(assignee, caseTitle, caseId)
-      try {
-        Email.send(Object.assign({
-          to: emailAddr,
-          from: process.env.FROM_EMAIL
-        }, emailContent))
-        console.log('Sent', emailAddr, 'notification type:', type)
-      } catch (e) {
-        console.error(`An error ${e} occurred while sending an email to ${emailAddr}`)
-      }
-
+      userId = message.assignee_user_id
+      templateFunction = caseAssigneeUpdateTemplate
       break
 
     case 'case_user_invited':
-
-      const {
-        invitee_user_id: inviteeId
-      } = message
-
-      const invitee = Meteor.users.findOne({'bugzillaCreds.id': parseInt(inviteeId)})
-      if (!invitee) {
-        console.error('Could deliver message to missing user of BZ ID: ' + inviteeId)
-        return
-      }
-      emailAddr = invitee.emails[0].address
-      emailContent = caseUserInvitedTemplate(invitee, caseTitle, caseId)
-      try {
-        Email.send(Object.assign({
-          to: emailAddr,
-          from: process.env.FROM_EMAIL
-        }, emailContent))
-        console.log('Sent', emailAddr, 'notification type:', type)
-      } catch (e) {
-        console.error(`An error ${e} occurred while sending an email to ${emailAddr}`)
-      }
+      // https://github.com/unee-t/sns2email/issues/3
+      userId = message.invitee_user_id
+      templateFunction = caseUserInvitedTemplate
       break
+
     default:
       console.log('Unimplemented type:', type)
+      res.send(400)
+      return
   }
+
+  const assignee = Meteor.users.findOne({'bugzillaCreds.id': parseInt(userId)})
+  if (!assignee) {
+    console.error('Could deliver message to missing user of BZ ID: ' + userId)
+    res.send(400)
+    return
+  }
+  const emailAddr = assignee.emails[0].address
+  const emailContent = templateFunction(assignee, caseTitle, caseId)
+  try {
+    Email.send(Object.assign({
+      to: emailAddr,
+      from: process.env.FROM_EMAIL
+    }, emailContent))
+    console.log('Sent', emailAddr, 'notification type:', type)
+  } catch (e) {
+    console.error(`An error ${e} occurred while sending an email to ${emailAddr}`)
+  }
+
   res.send(200)
 }

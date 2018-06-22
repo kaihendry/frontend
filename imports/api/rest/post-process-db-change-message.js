@@ -31,44 +31,49 @@ export default (req, res) => {
     notification_id: notificationId
   } = message
 
-  let userId, templateFunction, settingType
+  let recipients = []
 
   switch (type) {
     case 'case_new':
       // https://github.com/unee-t/sns2email/issues/1
       // When a new case is created, we need to inform the person who is assigned to that case.
-      userId = message.assignee_user_id
-      templateFunction = caseNewTemplate
-      settingType = 'assignedNewCase'
+      recipients.concat(lookup(message.assignee_user_id))
+      recipients.forEach(to => {
+        sendEmail(to, 'assignedNewCase', caseNewTemplate(to, caseTitle, caseId))
+      })
       break
 
     case 'case_assignee_updated':
       // https://github.com/unee-t/sns2email/issues/2
       // When the user assigned to a case change, we need to inform the person who is the new assignee to that case.
-      userId = message.assignee_user_id
-      templateFunction = caseAssigneeUpdateTemplate
-      settingType = 'assignedExistingCase'
+      recipients.concat(lookup(message.assignee_user_id))
+      recipients.forEach(to => {
+        sendEmail(to, 'assignedExistingCase', caseAssigneeUpdateTemplate(to, caseTitle, caseId))
+      })
       break
 
     case 'case_new_message':
       // https://github.com/unee-t/lambda2sns/issues/5
-      userId = message.invitee_user_id
-      templateFunction = caseNewMessageTemplate
-      settingType = 'caseNewMessage'
+      recipients.concat(lookup(message.assignee_user_id))
+      recipients.forEach(to => {
+        sendEmail(to, 'caseNewMessage', caseNewMessageTemplate(to, caseTitle, caseId))
+      })
       break
 
     case 'case_updated':
       // https://github.com/unee-t/lambda2sns/issues/4
-      userId = message.invitee_user_id
-      templateFunction = caseUpdatedTemplate
-      settingType = 'caseUpdate'
+      recipients.concat(lookup(message.assignee_user_id))
+      recipients.forEach(to => {
+        sendEmail(to, 'caseUpdated', caseUpdatedTemplate(to, caseTitle, caseId))
+      })
       break
 
     case 'case_user_invited':
       // https://github.com/unee-t/sns2email/issues/3
-      userId = message.invitee_user_id
-      templateFunction = caseUserInvitedTemplate
-      settingType = 'invitedToCase'
+      recipients.concat(lookup(message.invitee_user_id))
+      recipients.forEach(to => {
+        sendEmail(to, 'invitedToCase', caseUserInvitedTemplate(to, caseTitle, caseId))
+      })
       break
 
     default:
@@ -77,28 +82,32 @@ export default (req, res) => {
       return
   }
 
-  const assignee = Meteor.users.findOne({'bugzillaCreds.id': parseInt(userId)})
-  if (!assignee) {
-    console.error('Could deliver message to missing user of BZ ID: ' + userId)
-    res.send(400)
-    return
+  function lookup (userId) {
+    const assignee = Meteor.users.findOne({'bugzillaCreds.id': parseInt(userId)})
+    if (!assignee) {
+      console.error('Could deliver message to missing user of BZ ID: ' + userId)
+      return
+    }
+    return assignee
   }
-  if (!assignee.notificationSettings[settingType]) {
-    console.log(
+
+  function sendEmail (assignee, settingType, emailContent) {
+    if (!assignee.notificationSettings[settingType]) {
+      console.log(
       `${assignee.bugzillaCreds.login} has previously opted out from '${settingType}' notifications. ` +
        `Skipping email for notification ${notificationId}.`
     )
-  } else {
-    const emailAddr = assignee.emails[0].address
-    const emailContent = templateFunction(assignee, caseTitle, caseId)
-    try {
-      Email.send(Object.assign({
-        to: emailAddr,
-        from: process.env.FROM_EMAIL
-      }, emailContent))
-      console.log('Sent', emailAddr, 'notification type:', type)
-    } catch (e) {
-      console.error(`An error ${e} occurred while sending an email to ${emailAddr}`)
+    } else {
+      const emailAddr = assignee.emails[0].address
+      try {
+        Email.send(Object.assign({
+          to: emailAddr,
+          from: process.env.FROM_EMAIL
+        }, emailContent))
+        console.log('Sent', emailAddr, 'notification type:', type)
+      } catch (e) {
+        console.error(`An error ${e} occurred while sending an email to ${emailAddr}`)
+      }
     }
   }
 

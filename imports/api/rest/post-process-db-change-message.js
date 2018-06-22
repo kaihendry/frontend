@@ -1,8 +1,10 @@
 import { Meteor } from 'meteor/meteor'
 import { Email } from 'meteor/email'
 import MessagePayloads from '../message-payloads'
-import caseUserInvitedTemplate from '../../email-templates/user-invited-to-case'
+import caseUserInvitedTemplate from '../../email-templates/case-user-invited'
 import caseAssigneeUpdateTemplate from '../../email-templates/case-assignee-updated'
+import caseUpdatedTemplate from '../../email-templates/case-updated'
+import caseNewMessageTemplate from '../../email-templates/case-new-message'
 import caseNewTemplate from '../../email-templates/case-new'
 
 export default (req, res) => {
@@ -30,6 +32,13 @@ export default (req, res) => {
   let userId, templateFunction
 
   switch (type) {
+    case 'case_assignee_updated':
+      // https://github.com/unee-t/sns2email/issues/2
+      // When the user assigned to a case change, we need to inform the person who is the new assignee to that case.
+      userId = message.assignee_user_id
+      templateFunction = caseAssigneeUpdateTemplate
+      break
+
     case 'case_new':
       // https://github.com/unee-t/sns2email/issues/1
       // When a new case is created, we need to inform the person who is assigned to that case.
@@ -37,11 +46,16 @@ export default (req, res) => {
       templateFunction = caseNewTemplate
       break
 
-    case 'case_assignee_updated':
-      // https://github.com/unee-t/sns2email/issues/2
-      // When the user assigned to a case change, we need to inform the person who is the new assignee to that case.
-      userId = message.assignee_user_id
-      templateFunction = caseAssigneeUpdateTemplate
+    case 'case_new_message':
+      // https://github.com/unee-t/lambda2sns/issues/5
+      userId = message.invitee_user_id
+      templateFunction = caseNewMessageTemplate
+      break
+
+    case 'case_updated':
+      // https://github.com/unee-t/lambda2sns/issues/4
+      userId = message.invitee_user_id
+      templateFunction = caseUpdatedTemplate
       break
 
     case 'case_user_invited':

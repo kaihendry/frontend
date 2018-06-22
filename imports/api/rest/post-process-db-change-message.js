@@ -1,8 +1,10 @@
 import { Meteor } from 'meteor/meteor'
 import { Email } from 'meteor/email'
 import MessagePayloads from '../message-payloads'
-import caseUserInvitedTemplate from '../../email-templates/user-invited-to-case'
+import caseUserInvitedTemplate from '../../email-templates/case-user-invited'
 import caseAssigneeUpdateTemplate from '../../email-templates/case-assignee-updated'
+import caseUpdatedTemplate from '../../email-templates/case-updated'
+import caseNewMessageTemplate from '../../email-templates/case-new-message'
 import caseNewTemplate from '../../email-templates/case-new'
 
 export default (req, res) => {
@@ -46,6 +48,20 @@ export default (req, res) => {
       userId = message.assignee_user_id
       templateFunction = caseAssigneeUpdateTemplate
       settingType = 'assignedExistingCase'
+      break
+
+    case 'case_new_message':
+      // https://github.com/unee-t/lambda2sns/issues/5
+      userId = message.invitee_user_id
+      templateFunction = caseNewMessageTemplate
+      settingType = 'caseNewMessage'
+      break
+
+    case 'case_updated':
+      // https://github.com/unee-t/lambda2sns/issues/4
+      userId = message.invitee_user_id
+      templateFunction = caseUpdatedTemplate
+      settingType = 'caseUpdate'
       break
 
     case 'case_user_invited':

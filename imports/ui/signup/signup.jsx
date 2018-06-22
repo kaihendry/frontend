@@ -123,6 +123,7 @@ export class SignupPage extends Component {
             )}
             {this.inputs.map(({label, identifier, placeholder, type, onChange}, i) => (
               <InputRow key={i} label={label} placeholder={placeholder} inpType={type} value={info[identifier]}
+                autocomplete='foobar'
                 onChange={evt => onChange ? onChange(evt) : this.makeInfoChange({[identifier]: evt.target.value})}
                 errorText={errorTexts[identifier]}
               />

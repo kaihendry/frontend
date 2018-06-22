@@ -9,7 +9,7 @@ import {
 
 export default class InputRow extends Component {
   render () {
-    const { inpType, inpRef, label, placeholder, errorText, disabled, value, onChange } = this.props
+    const { inpType, inpRef, label, placeholder, autocomplete, errorText, disabled, value, onChange } = this.props
     const type = inpType || 'text'
     return (
       <TextField
@@ -20,7 +20,7 @@ export default class InputRow extends Component {
         fullWidth
         hintText={placeholder}
         ref={inpRef}
-        {...{type, errorText, disabled, value, onChange}}
+        {...{type, autocomplete, errorText, disabled, value, onChange}}
       />
     )
   }
@@ -31,6 +31,7 @@ InputRow.propTypes = {
   onChange: PropTypes.func.isRequired,
   value: PropTypes.any,
   errorText: PropTypes.string,
+  autocomplete: PropTypes.string,
   inpRef: PropTypes.func,
   inpType: PropTypes.string,
   disabled: PropTypes.bool,

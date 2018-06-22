@@ -47,6 +47,7 @@ export class LoginPage extends Component {
         <form onSubmit={this.handleSubmit}>
           <fieldset id='sign_up' className='ba b--transparent ph0 mh0'>
             <InputRow label='Email' inpType='email'
+              autocomplete='email'
               value={email}
               errorText={emailError}
               onChange={this.handleEmailChanged}

@@ -52,6 +52,7 @@ class ForgotPass extends Component {
           </div>
           <fieldset className='ba b--transparent ph0 mh0'>
             <InputRow label='Email address' value={email} inpType='email' errorText={error || asyncError}
+              autocomplete='email'
               onChange={this.handleEmailChange} />
           </fieldset>
           <div className='flex mt3 items-center'>

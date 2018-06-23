@@ -7,7 +7,7 @@ export default (assignee, caseTitle, caseId, updateWhat, userId) => ({
 
 <p>Hi ${assignee.profile.name || assignee.emails[0].address.split('@')[0]},</p>
 
-<p>The case <strong>${caseTitle}</strong> has had a ${updateWhat} made by ${userId}.</p>
+<p>The case <strong>${caseTitle}</strong> has had a ${updateWhat} made by ${userId.profile.name}.</p>
 
 <p>Please follow <a href='${url.resolve(process.env.ROOT_URL, `/case/${caseId}`)}'>${url.resolve(process.env.ROOT_URL, `/case/${caseId}`)}</a> to participate.</p>
 

@@ -55,18 +55,18 @@ export default (req, res) => {
 
     case 'case_new_message':
       // https://github.com/unee-t/lambda2sns/issues/5
-      recipients = lookup([message.assignee_user_id, message.current_list_of_invitees].join(","))
+      recipients = lookup([message.new_case_assignee_user_id, message.current_list_of_invitees].join(','))
       recipients.forEach(to => {
-        sendEmail(to, 'caseNewMessage', caseNewMessageTemplate(to, caseTitle, caseId, messsage.message_truncated))
+        sendEmail(to, 'caseNewMessage', caseNewMessageTemplate(to, caseTitle, caseId, lookup(message.created_by_user_id)[0], message.message_truncated))
       })
       break
 
     case 'case_updated':
       // https://github.com/unee-t/lambda2sns/issues/4
       // More are notified: https://github.com/unee-t/lambda2sns/issues/4#issuecomment-399339075
-      recipients = lookup([message.assignee_user_id, message.case_reporter_user_id, message.current_list_of_invitees].join(","))
+      recipients = lookup([message.assignee_user_id, message.case_reporter_user_id, message.current_list_of_invitees].join(','))
       recipients.forEach(to => {
-        sendEmail(to, 'caseUpdate', caseUpdatedTemplate(to, caseTitle, caseId, messsage.update_what, message.userId))
+        sendEmail(to, 'caseUpdate', caseUpdatedTemplate(to, caseTitle, caseId, message.update_what, lookup(message.user_id)[0]))
       })
       break
 
@@ -84,9 +84,9 @@ export default (req, res) => {
       return
   }
 
-  function lookup(userIdstring) {
+  function lookup (userIdstring) {
     // userIdstring could be: "13, 15, 23"  or just "19"
-    const userIds = userIdstring.split(',')
+    const userIds = userIdstring.split(',').filter((val) => val)
     let assignees = []
     for (var i = 0; i < userIds.length; i++) {
       const assignee = Meteor.users.findOne({ 'bugzillaCreds.id': parseInt(userIds[i]) })
@@ -99,7 +99,7 @@ export default (req, res) => {
     return assignees
   }
 
-  function sendEmail(assignee, settingType, emailContent) {
+  function sendEmail (assignee, settingType, emailContent) {
     if (!assignee.notificationSettings[settingType]) {
       console.log(
         `Skipping ${assignee.bugzillaCreds.login} as opted out from '${settingType}' notifications.`
@@ -111,7 +111,7 @@ export default (req, res) => {
           to: emailAddr,
           from: process.env.FROM_EMAIL
         }, emailContent))
-        console.log('Sent', emailAddr, 'notification type:', type)
+        console.log('Sent', emailAddr, 'notification:', notificationId)
       } catch (e) {
         console.error(`An error ${e} occurred while sending an email to ${emailAddr}`)
       }

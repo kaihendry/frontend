@@ -7,7 +7,7 @@ export default (assignee, caseTitle, caseId, userId, message) => ({
 
 <p>Hi ${assignee.profile.name || assignee.emails[0].address.split('@')[0]},</p>
 
-<p>New message by ${userId}:</p>
+<p>New message by ${userId.profile.name}:</p>
 
 <p>${message}</p>
 

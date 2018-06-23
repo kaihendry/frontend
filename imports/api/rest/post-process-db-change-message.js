@@ -1,11 +1,11 @@
 import { Meteor } from 'meteor/meteor'
 import { Email } from 'meteor/email'
 import MessagePayloads from '../message-payloads'
-import caseUserInvitedTemplate from '../../email-templates/case-user-invited'
 import caseAssigneeUpdateTemplate from '../../email-templates/case-assignee-updated'
 import caseUpdatedTemplate from '../../email-templates/case-updated'
 import caseNewMessageTemplate from '../../email-templates/case-new-message'
 import caseNewTemplate from '../../email-templates/case-new'
+import caseUserInvitedTemplate from '../../email-templates/case-user-invited'
 
 export default (req, res) => {
   if (req.query.accessToken !== process.env.API_ACCESS_TOKEN) {
@@ -15,7 +15,7 @@ export default (req, res) => {
 
   const message = req.body
 
-  if (MessagePayloads.findOne({notification_id: message.notification_id})) {
+  if (MessagePayloads.findOne({ notification_id: message.notification_id })) {
     console.log(`Duplicate message ${message.notification_id}`)
     res.send(400, `Duplicate message ${message.notification_id}`)
     return
@@ -24,6 +24,7 @@ export default (req, res) => {
   console.log('Incoming to /api/db-change-message/process', message)
   MessagePayloads.insert(message)
 
+  // Common between https://github.com/unee-t/lambda2sns/tree/master/tests/events
   const {
     notification_type: type,
     case_title: caseTitle,
@@ -37,7 +38,7 @@ export default (req, res) => {
     case 'case_new':
       // https://github.com/unee-t/sns2email/issues/1
       // When a new case is created, we need to inform the person who is assigned to that case.
-      recipients.concat(lookup(message.assignee_user_id))
+      recipients = lookup(message.assignee_user_id)
       recipients.forEach(to => {
         sendEmail(to, 'assignedNewCase', caseNewTemplate(to, caseTitle, caseId))
       })
@@ -46,7 +47,7 @@ export default (req, res) => {
     case 'case_assignee_updated':
       // https://github.com/unee-t/sns2email/issues/2
       // When the user assigned to a case change, we need to inform the person who is the new assignee to that case.
-      recipients.concat(lookup(message.assignee_user_id))
+      recipients = lookup(message.assignee_user_id)
       recipients.forEach(to => {
         sendEmail(to, 'assignedExistingCase', caseAssigneeUpdateTemplate(to, caseTitle, caseId))
       })
@@ -54,23 +55,24 @@ export default (req, res) => {
 
     case 'case_new_message':
       // https://github.com/unee-t/lambda2sns/issues/5
-      recipients.concat(lookup(message.assignee_user_id))
+      recipients = lookup([message.assignee_user_id, message.current_list_of_invitees].join(","))
       recipients.forEach(to => {
-        sendEmail(to, 'caseNewMessage', caseNewMessageTemplate(to, caseTitle, caseId))
+        sendEmail(to, 'caseNewMessage', caseNewMessageTemplate(to, caseTitle, caseId, messsage.message_truncated))
       })
       break
 
     case 'case_updated':
       // https://github.com/unee-t/lambda2sns/issues/4
-      recipients.concat(lookup(message.assignee_user_id))
+      // More are notified: https://github.com/unee-t/lambda2sns/issues/4#issuecomment-399339075
+      recipients = lookup([message.assignee_user_id, message.case_reporter_user_id, message.current_list_of_invitees].join(","))
       recipients.forEach(to => {
-        sendEmail(to, 'caseUpdated', caseUpdatedTemplate(to, caseTitle, caseId))
+        sendEmail(to, 'caseUpdate', caseUpdatedTemplate(to, caseTitle, caseId, messsage.update_what, message.userId))
       })
       break
 
     case 'case_user_invited':
       // https://github.com/unee-t/sns2email/issues/3
-      recipients.concat(lookup(message.invitee_user_id))
+      recipients = lookup(message.invitee_user_id)
       recipients.forEach(to => {
         sendEmail(to, 'invitedToCase', caseUserInvitedTemplate(to, caseTitle, caseId))
       })
@@ -82,21 +84,26 @@ export default (req, res) => {
       return
   }
 
-  function lookup (userId) {
-    const assignee = Meteor.users.findOne({'bugzillaCreds.id': parseInt(userId)})
-    if (!assignee) {
-      console.error('Could deliver message to missing user of BZ ID: ' + userId)
-      return
+  function lookup(userIdstring) {
+    // userIdstring could be: "13, 15, 23"  or just "19"
+    const userIds = userIdstring.split(',')
+    let assignees = []
+    for (var i = 0; i < userIds.length; i++) {
+      const assignee = Meteor.users.findOne({ 'bugzillaCreds.id': parseInt(userIds[i]) })
+      if (!assignee) {
+        console.error('Failed to lookup BZ ID: ' + userIds[i])
+      } else {
+        assignees.push(assignee)
+      }
     }
-    return assignee
+    return assignees
   }
 
-  function sendEmail (assignee, settingType, emailContent) {
+  function sendEmail(assignee, settingType, emailContent) {
     if (!assignee.notificationSettings[settingType]) {
       console.log(
-      `${assignee.bugzillaCreds.login} has previously opted out from '${settingType}' notifications. ` +
-       `Skipping email for notification ${notificationId}.`
-    )
+        `Skipping ${assignee.bugzillaCreds.login} as opted out from '${settingType}' notifications.`
+      )
     } else {
       const emailAddr = assignee.emails[0].address
       try {

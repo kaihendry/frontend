@@ -6,21 +6,6 @@ import caseUpdatedTemplate from '../../email-templates/case-updated'
 import caseNewMessageTemplate from '../../email-templates/case-new-message'
 import caseUserInvitedTemplate from '../../email-templates/case-user-invited'
 
-// function lookup (userIdstring) {
-//     // userIdstring could be: "13, 15, 23"  or just "19"
-//   const userIds = userIdstring.split(',').filter((val) => val)
-//   let assignees = []
-//   for (var i = 0; i < userIds.length; i++) {
-//     const assignee = getUserByBZId(userIds[i])
-//     if (!assignee) {
-//       console.error('Failed to lookup BZ ID: ' + userIds[i])
-//     } else {
-//       assignees.push(assignee)
-//     }
-//   }
-//   return assignees
-// }
-
 function getUserByBZId (idStr) {
   return Meteor.users.findOne({ 'bugzillaCreds.id': parseInt(idStr) })
 }

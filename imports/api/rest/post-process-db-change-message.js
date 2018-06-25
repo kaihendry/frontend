@@ -4,8 +4,39 @@ import MessagePayloads from '../message-payloads'
 import caseAssigneeUpdateTemplate from '../../email-templates/case-assignee-updated'
 import caseUpdatedTemplate from '../../email-templates/case-updated'
 import caseNewMessageTemplate from '../../email-templates/case-new-message'
-import caseNewTemplate from '../../email-templates/case-new'
 import caseUserInvitedTemplate from '../../email-templates/case-user-invited'
+
+// function lookup (userIdstring) {
+//     // userIdstring could be: "13, 15, 23"  or just "19"
+//   const userIds = userIdstring.split(',').filter((val) => val)
+//   let assignees = []
+//   for (var i = 0; i < userIds.length; i++) {
+//     const assignee = getUserByBZId(userIds[i])
+//     if (!assignee) {
+//       console.error('Failed to lookup BZ ID: ' + userIds[i])
+//     } else {
+//       assignees.push(assignee)
+//     }
+//   }
+//   return assignees
+// }
+
+function getUserByBZId (idStr) {
+  return Meteor.users.findOne({ 'bugzillaCreds.id': parseInt(idStr) })
+}
+
+function sendEmail (assignee, emailContent, notificationId) {
+  const emailAddr = assignee.emails[0].address
+  try {
+    Email.send(Object.assign({
+      to: emailAddr,
+      from: process.env.FROM_EMAIL
+    }, emailContent))
+    console.log('Sent', emailAddr, 'notification:', notificationId)
+  } catch (e) {
+    console.error(`An error ${e} occurred while sending an email to ${emailAddr}`)
+  }
+}
 
 export default (req, res) => {
   if (req.query.accessToken !== process.env.API_ACCESS_TOKEN) {
@@ -32,41 +63,41 @@ export default (req, res) => {
     notification_id: notificationId
   } = message
 
-  let recipients = []
+  let userIds, templateParams, templateFn, settingType
 
   switch (type) {
     case 'case_assignee_updated':
       // https://github.com/unee-t/sns2email/issues/2
       // When the user assigned to a case change, we need to inform the person who is the new assignee to that case.
-      recipients = lookup(message.new_case_assignee_user_id)
-      recipients.forEach(to => {
-        sendEmail(to, 'assignedExistingCase', caseAssigneeUpdateTemplate(to, caseTitle, caseId))
-      })
+      settingType = 'assignedExistingCase'
+      userIds = [message.new_case_assignee_user_id]
+      templateFn = caseAssigneeUpdateTemplate
+      templateParams = [caseTitle, caseId]
       break
 
     case 'case_new_message':
       // https://github.com/unee-t/lambda2sns/issues/5
-      recipients = lookup([message.new_case_assignee_user_id, message.current_list_of_invitees].join(','))
-      recipients.forEach(to => {
-        sendEmail(to, 'caseNewMessage', caseNewMessageTemplate(to, caseTitle, caseId, lookup(message.created_by_user_id)[0], message.message_truncated))
-      })
+      settingType = 'caseNewMessage'
+      userIds = message.current_list_of_invitees.split(',').concat([message.new_case_assignee_user_id])
+      templateFn = caseNewMessageTemplate
+      templateParams = [caseTitle, caseId, getUserByBZId(message.created_by_user_id), message.message_truncated]
       break
 
     case 'case_updated':
       // https://github.com/unee-t/lambda2sns/issues/4
       // More are notified: https://github.com/unee-t/lambda2sns/issues/4#issuecomment-399339075
-      recipients = lookup([message.new_case_assignee_user_id, message.case_reporter_user_id, message.current_list_of_invitees].join(','))
-      recipients.forEach(to => {
-        sendEmail(to, 'caseUpdate', caseUpdatedTemplate(to, caseTitle, caseId, message.update_what, lookup(message.user_id)[0]))
-      })
+      settingType = 'caseUpdate'
+      userIds = message.current_list_of_invitees.split(',').concat([message.new_case_assignee_user_id, message.case_reporter_user_id])
+      templateFn = caseUpdatedTemplate
+      templateParams = [caseTitle, caseId, message.update_what, getUserByBZId(message.user_id)]
       break
 
     case 'case_user_invited':
       // https://github.com/unee-t/sns2email/issues/3
-      recipients = lookup(message.invitee_user_id)
-      recipients.forEach(to => {
-        sendEmail(to, 'invitedToCase', caseUserInvitedTemplate(to, caseTitle, caseId))
-      })
+      settingType = 'invitedToCase'
+      userIds = [message.invitee_user_id]
+      templateFn = caseUserInvitedTemplate
+      templateParams = [caseTitle, caseId]
       break
 
     default:
@@ -74,40 +105,21 @@ export default (req, res) => {
       res.send(400)
       return
   }
-
-  function lookup (userIdstring) {
-    // userIdstring could be: "13, 15, 23"  or just "19"
-    const userIds = userIdstring.split(',').filter((val) => val)
-    let assignees = []
-    for (var i = 0; i < userIds.length; i++) {
-      const assignee = Meteor.users.findOne({ 'bugzillaCreds.id': parseInt(userIds[i]) })
-      if (!assignee) {
-        console.error('Failed to lookup BZ ID: ' + userIds[i])
-      } else {
-        assignees.push(assignee)
-      }
+  (new Set(userIds)).forEach(userId => {
+    const recipient = getUserByBZId(userId)
+    if (!recipient) {
+      console.error(`User with bz id ${userId} was not found in mongo`)
+      return
     }
-    return assignees
-  }
-
-  function sendEmail (assignee, settingType, emailContent) {
-    if (!assignee.notificationSettings[settingType]) {
+    if (!recipient.notificationSettings[settingType]) {
       console.log(
-        `Skipping ${assignee.bugzillaCreds.login} as opted out from '${settingType}' notifications.`
-      )
+          `Skipping ${recipient.bugzillaCreds.login} as opted out from '${settingType}' notifications.`
+        )
     } else {
-      const emailAddr = assignee.emails[0].address
-      try {
-        Email.send(Object.assign({
-          to: emailAddr,
-          from: process.env.FROM_EMAIL
-        }, emailContent))
-        console.log('Sent', emailAddr, 'notification:', notificationId)
-      } catch (e) {
-        console.error(`An error ${e} occurred while sending an email to ${emailAddr}`)
-      }
+      const emailContent = templateFn(...[recipient].concat(templateParams))
+      sendEmail(recipient, emailContent, notificationId)
     }
-  }
+  })
 
   res.send(200)
 }

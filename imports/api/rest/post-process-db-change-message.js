@@ -35,19 +35,10 @@ export default (req, res) => {
   let recipients = []
 
   switch (type) {
-    case 'case_new':
-      // https://github.com/unee-t/sns2email/issues/1
-      // When a new case is created, we need to inform the person who is assigned to that case.
-      recipients = lookup(message.assignee_user_id)
-      recipients.forEach(to => {
-        sendEmail(to, 'assignedNewCase', caseNewTemplate(to, caseTitle, caseId))
-      })
-      break
-
     case 'case_assignee_updated':
       // https://github.com/unee-t/sns2email/issues/2
       // When the user assigned to a case change, we need to inform the person who is the new assignee to that case.
-      recipients = lookup(message.assignee_user_id)
+      recipients = lookup(message.new_case_assignee_user_id)
       recipients.forEach(to => {
         sendEmail(to, 'assignedExistingCase', caseAssigneeUpdateTemplate(to, caseTitle, caseId))
       })
@@ -55,7 +46,7 @@ export default (req, res) => {
 
     case 'case_new_message':
       // https://github.com/unee-t/lambda2sns/issues/5
-      recipients = lookup([message.new_case_assignee_user_id, message.current_list_of_invitees].join(','))
+      recipients = lookup([message.new_case_new_case_assignee_user_id, message.current_list_of_invitees].join(','))
       recipients.forEach(to => {
         sendEmail(to, 'caseNewMessage', caseNewMessageTemplate(to, caseTitle, caseId, lookup(message.created_by_user_id)[0], message.message_truncated))
       })
@@ -64,7 +55,7 @@ export default (req, res) => {
     case 'case_updated':
       // https://github.com/unee-t/lambda2sns/issues/4
       // More are notified: https://github.com/unee-t/lambda2sns/issues/4#issuecomment-399339075
-      recipients = lookup([message.assignee_user_id, message.case_reporter_user_id, message.current_list_of_invitees].join(','))
+      recipients = lookup([message.new_case_assignee_user_id, message.case_reporter_user_id, message.current_list_of_invitees].join(','))
       recipients.forEach(to => {
         sendEmail(to, 'caseUpdate', caseUpdatedTemplate(to, caseTitle, caseId, message.update_what, lookup(message.user_id)[0]))
       })

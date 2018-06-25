@@ -46,7 +46,7 @@ export default (req, res) => {
 
     case 'case_new_message':
       // https://github.com/unee-t/lambda2sns/issues/5
-      recipients = lookup([message.new_case_new_case_assignee_user_id, message.current_list_of_invitees].join(','))
+      recipients = lookup([message.new_case_assignee_user_id, message.current_list_of_invitees].join(','))
       recipients.forEach(to => {
         sendEmail(to, 'caseNewMessage', caseNewMessageTemplate(to, caseTitle, caseId, lookup(message.created_by_user_id)[0], message.message_truncated))
       })

@@ -1,7 +1,7 @@
 import url from 'url'
 import unsubscribeClause from './components/unsubscribe-clause'
 
-export default (assignee, caseTitle, caseId) => ({
+export default (assignee, notificationId, settingType, caseTitle, caseId) => ({
   subject: `Assigned to "${caseTitle}"`,
   html: `<img src="cid:logo@unee-t.com"/>
 

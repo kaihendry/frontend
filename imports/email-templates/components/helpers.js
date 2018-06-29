@@ -21,6 +21,7 @@ function resolveServiceDomain (service) {
 
 export function optOutHtml (settingType, notificationId, user, optoutUrl) {
   return (`
+<p><a href=https://unee-t.com>Unee-T</a>, managing and sharing 'To Do's for your properties has never been easier.</p>
     <p>
       To opt out of receiving "${settingType}" emails, please visit
       <a href='${
@@ -38,7 +39,9 @@ export function optOutHtml (settingType, notificationId, user, optoutUrl) {
 
 export function optOutText (settingType, notificationId, user, optoutUrl) {
   return (`
-   To opt out of receiving "${settingType}" emails, please visit
+Unee-T, managing and sharing 'To Do's for your properties has never been easier.
+
+To opt out of receiving "${settingType}" emails, please visit
     ${engage({
       url: URL.resolve(process.env.ROOT_URL, '/notification-settings'),
       id: notificationId,

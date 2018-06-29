@@ -2,7 +2,9 @@ import URL from 'url'
 import { URL as url2 } from 'meteor/url'
 
 function engage (params) {
-  // url, medium, id, userId is expected
+  // where to: url
+  // who: email
+  // why: notification id
   const engagementURL = URL.parse(resolveServiceDomain('e'))
   engagementURL.search = url2._encodeParams(params)
   return URL.format(engagementURL)
@@ -24,9 +26,8 @@ export function optOutHtml (settingType, notificationId, user, optoutUrl) {
       <a href='${
     engage({
       url: URL.resolve(process.env.ROOT_URL, '/notification-settings'),
-      medium: 'email',
       id: notificationId,
-      user: user.bugzillaCreds.id
+      email: user.emails[0].address
     })
     }'>
         ${URL.resolve(process.env.ROOT_URL, '/notification-settings')}
@@ -38,6 +39,10 @@ export function optOutHtml (settingType, notificationId, user, optoutUrl) {
 export function optOutText (settingType, notificationId, user, optoutUrl) {
   return (`
    To opt out of receiving "${settingType}" emails, please visit
-   ${URL.resolve(process.env.ROOT_URL, `/notification-settings`)}
+    ${engage({
+      url: URL.resolve(process.env.ROOT_URL, '/notification-settings'),
+      id: notificationId,
+      email: user.emails[0].address
+    })}
  `)
 }

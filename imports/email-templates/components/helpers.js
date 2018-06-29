@@ -1,39 +1,43 @@
-import { URL, resolve, URLSearchParams } from 'url'
+import URL from 'url'
+import { URL as url2 } from 'meteor/url'
 
-function engage (parameters) {
-  // url, medium, id, user is expected
-  // URL._constructUrl = function (url, query, params)
-  const params = new URLSearchParams(parameters)
-  params.sort()
-  const engageUrl = new URL(process.env.ROOT_URL)
-  const hparts = engageUrl.hostname.split('.')
-  hparts[0] = 'e' // Switch to correct stage of engagement API
-  engageUrl.hostname = hparts.join('.')
-  engageUrl.search = params
-  return engageUrl.toString()
+function engage (params) {
+  // url, medium, id, userId is expected
+  const engagementURL = URL.parse(resolveServiceDomain('e'))
+  engagementURL.search = url2._encodeParams(params)
+  return URL.format(engagementURL)
 }
 
-function optOutHtml (settingType, notificationId, user, optoutUrl) {
-  return `
+// Does not work on localhost domains, since we assume 4 parts: $service.$stage.unee-t.com
+function resolveServiceDomain (service) {
+  const url = URL.parse(process.env.ROOT_URL)
+  const hparts = url.hostname.split('.')
+  hparts[0] = service
+  url.host = hparts.join('.')
+  return URL.format(url)
+}
+
+export function optOutHtml (settingType, notificationId, user, optoutUrl) {
+  return (`
     <p>
-      To opt out of "${settingType}" emails, please visit your notification settings panel at
-      <a href='${engage({
-    url: `${resolve(process.env.ROOT_URL, `/notification-settings`)}`,
-    medium: 'email',
-    id: notificationId,
-    user: user.id }
-  )}'>
-        ${resolve(process.env.ROOT_URL, `/notification-settings?type=${settingType}`)}
+      To opt out of receiving "${settingType}" emails, please visit
+      <a href='${
+    engage({
+      url: URL.resolve(process.env.ROOT_URL, '/notification-settings'),
+      medium: 'email',
+      id: notificationId,
+      user: user.bugzillaCreds.id
+    })
+    }'>
+        ${URL.resolve(process.env.ROOT_URL, '/notification-settings')}
       </a>
     </p>
-  `
+  `)
 }
 
-function optOutText (settingType, notificationId, user, optoutUrl) {
-  return `
-  To opt out of "${settingType}" emails, please visit your notification settings panel at
-  ${resolve(process.env.ROOT_URL, `/notification-settings?type=${settingType}`)}
-  `
+export function optOutText (settingType, notificationId, user, optoutUrl) {
+  return (`
+   To opt out of receiving "${settingType}" emails, please visit
+   ${URL.resolve(process.env.ROOT_URL, `/notification-settings`)}
+ `)
 }
-
-export { engage, optOutHtml, optOutText }

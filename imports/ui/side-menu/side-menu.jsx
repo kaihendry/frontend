@@ -66,21 +66,23 @@ class SideMenu extends Component {
         })}
         <Divider />
         {this.linkDrawerItem({
-          href: 'https://unee-t.com/contact-support/',
+          href: 'mailto:support@unee-t.com?subject=' + window.location.href + '&body=' + encodeURIComponent(`user: ${user.emails[0].address}
+
+What did you expect to do?
+
+### PLEASE FILL IN ###
+          
+What happened?
+
+### PLEASE FILL IN ###
+          
+What should have happened?
+
+### PLEASE FILL IN ###
+
+Please insert any screenshots or error messages that might help us! 🙏`),
           iconName: 'live_help',
-          text: 'Support',
-          isExternal: true
-        })}
-        {this.linkDrawerItem({
-          href: 'https://forum.unee-t.com/',
-          iconName: 'forum',
-          text: 'Forum',
-          isExternal: true
-        })}
-        {this.linkDrawerItem({
-          href: 'https://documentation.unee-t.com',
-          iconName: 'help',
-          text: 'FAQ',
+          text: `Support`,
           isExternal: true
         })}
         <Divider />

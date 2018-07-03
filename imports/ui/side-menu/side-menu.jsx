@@ -38,6 +38,22 @@ class SideMenu extends Component {
 
   render () {
     const { user, isDrawerOpen, dispatch } = this.props
+    const supportEmailBody = user && `What were you trying to do?
+
+### PLEASE FILL IN ###
+
+What happened?
+
+### PLEASE FILL IN ###
+
+What should have happened?
+
+### PLEASE FILL IN ###
+
+Please insert any screenshots or error messages that might help us! 🙏
+
+DEBUG INFO:
+user: ${user.emails[0].address}`
     return user ? (
       <Drawer
         docked={false}
@@ -66,23 +82,9 @@ class SideMenu extends Component {
         })}
         <Divider />
         {this.linkDrawerItem({
-          href: 'mailto:support@unee-t.com?subject=' + window.location.href + '&body=' + encodeURIComponent(`user: ${user.emails[0].address}
-
-What did you expect to do?
-
-### PLEASE FILL IN ###
-          
-What happened?
-
-### PLEASE FILL IN ###
-          
-What should have happened?
-
-### PLEASE FILL IN ###
-
-Please insert any screenshots or error messages that might help us! 🙏`),
+          href: 'mailto:support@unee-t.com?subject=' + window.location.href + '&body=' + encodeURIComponent(supportEmailBody),
           iconName: 'live_help',
-          text: `Support`,
+          text: 'Support',
           isExternal: true
         })}
         <Divider />

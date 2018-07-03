@@ -87,6 +87,12 @@ user: ${user.emails[0].address}`
           text: 'Support',
           isExternal: true
         })}
+        {this.linkDrawerItem({
+          href: 'https://documentation.unee-t.com',
+          iconName: 'help',
+          text: 'FAQ',
+          isExternal: true
+        })}
         <Divider />
         {this.routeDrawerItem('/notification-settings', {
           href: '/notification-settings',

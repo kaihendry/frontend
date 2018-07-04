@@ -3,7 +3,7 @@ import { optOutHtml, optOutText } from './components/helpers'
 import { matchWidth } from '../util/cloudinary-transformations'
 
 function linkAttachment (message) {
-  const msgParts = message.split(' ')
+  const msgParts = message.trim().split(/\s+/)
   if (msgParts.length > 1 && msgParts[0] === '[!attachment]') {
     const attachmentUrl = msgParts[1]
     if (attachmentUrl.match(/\.(jpeg|jpg|gif|png)$/) != null) {

@@ -7,7 +7,6 @@ import getConvertedInvitations from './get-converted-invitations'
 import postProcessDbChangeMessage from './post-process-db-change-message'
 import postSesNotification from './post-ses-notification'
 
-
 JsonRoutes.Middleware.use(json())
 JsonRoutes.Middleware.use((req, res, next) => {
   // The response objects are missing the traditional "send" method by default, so it has to be created artificially

@@ -19,8 +19,10 @@ export class LoginPage extends Component {
     }
   }
   componentDidMount () {
+    const emailParam = new URL(window.location).searchParams.get('email') || ''
     this.setState({
-      email: new URL(window.location).searchParams.get('email') || ''
+      email: emailParam,
+      emailError: !emailParam || emailValidator(emailParam) ? null : 'Email address is invalid'
     })
   }
   handleSubmit = evt => {

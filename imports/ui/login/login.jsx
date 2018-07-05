@@ -14,9 +14,14 @@ export class LoginPage extends Component {
   constructor () {
     super(...arguments)
     this.state = {
-      email: new URL(window.location).searchParams.get('email'),
+      email: '',
       password: ''
     }
+  }
+  componentDidMount () {
+    this.setState({
+      email: new URL(window.location).searchParams.get('email') || ''
+    })
   }
   handleSubmit = evt => {
     evt.preventDefault()
@@ -63,7 +68,12 @@ export class LoginPage extends Component {
           )}
           <div className='flex mt3 items-center'>
             <div className='flex-grow lh-copy tl'>
-              <Link to='/forgot-pass' className='f6 link dim bondi-blue'>Forgot password?</Link>
+              <Link
+                to={'/forgot-pass' + (email ? `?email=${encodeURIComponent(email)}` : '')}
+                className='f6 link dim bondi-blue'
+              >
+                Forgot password?
+              </Link>
             </div>
             <RaisedButton label='Login' labelColor='white' backgroundColor='var(--bondi-blue)' type='submit'
               disabled={!password || !email || emailError}

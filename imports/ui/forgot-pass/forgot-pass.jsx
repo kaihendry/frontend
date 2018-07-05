@@ -14,8 +14,13 @@ class ForgotPass extends Component {
   constructor () {
     super(...arguments)
     this.state = {
-      email: new URL(window.location).searchParams.get('email')
+      email: ''
     }
+  }
+  componentDidMount () {
+    this.setState({
+      email: new URL(window.location).searchParams.get('email') || ''
+    })
   }
   handleSubmit = evt => {
     evt.preventDefault()

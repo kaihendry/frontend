@@ -12,6 +12,7 @@ class UnverifiedWarning extends React.Component {
         <p className='f7 mb0 mt2'>
           Your email address {email} has not been verified yet.
           Confirm your email to receive updates on your cases.
+          <a>Resend email verification</a>.
         </p>
       </div>
     ) : null

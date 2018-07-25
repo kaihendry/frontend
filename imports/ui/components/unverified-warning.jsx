@@ -7,13 +7,13 @@ class UnverifiedWarning extends React.Component {
   render () {
     const { isUserVerified, email } = this.props
     return !isUserVerified ? (
-      <main>
-        <h1 className='f-1'>Verify your email address</h1>
-        <p>
+      <div className='bg-warn-pale-red card-shadow-1 tc pt2 pb3 warn-plain-red'>
+        <div className='f6 fw5'>Verify your email address</div>
+        <p className='f7 mb0 mt2'>
           Your email address {email} has not been verified yet.
           Confirm your email to receive updates on your cases.
         </p>
-      </main>
+      </div>
     ) : null
   }
 }

@@ -1,6 +1,7 @@
 import React, { Component } from 'react'
 import { Meteor } from 'meteor/meteor'
 import PropTypes from 'prop-types'
+import { UnverifiedWarning } from '../components/unverified-warning.jsx'
 import { connect } from 'react-redux'
 import { createContainer } from 'meteor/react-meteor-data'
 import { push } from 'react-router-redux'
@@ -21,6 +22,7 @@ class UnitExplorer extends Component {
     return (
       <div className='flex flex-column flex-grow full-height'>
         <RootAppBar title='My Units' onIconClick={() => dispatch(setDrawerState(true))} />
+        <UnverifiedWarning />
         <div className='flex flex-column flex-grow pa3 bg-very-light-gray'>
           <div className='br2 bg-white card-shadow-1 w-100 pt2 flex flex-column'>
             <div className='ph2 flex flex-column'>

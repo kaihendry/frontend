@@ -2,6 +2,7 @@ import React from 'react'
 import PropTypes from 'prop-types'
 import { connect } from 'react-redux'
 import { createContainer } from 'meteor/react-meteor-data'
+import { Meteor } from 'meteor/meteor'
 
 class UnverifiedWarning extends React.Component {
   render () {

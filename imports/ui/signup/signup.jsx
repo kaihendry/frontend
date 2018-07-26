@@ -98,10 +98,10 @@ export class SignupPage extends Component {
             <label className='pa0 ma0 lh-copy f6 pointer mid-gray'>
               <Checkbox
                 checked={termsAgreement}
+                label='By signing up, you agree to our'
                 onCheck={(evt, isChecked) => { this.setState({termsAgreement: isChecked}) }}
               />
-            By signing up, you agree to our&nbsp;
-              <a className='link bondi-blue fw8' target='_blank' href='https://unee-t.com/privacy-and-terms/'>
+              <a className='link bondi-blue fw8 pl3' target='_blank' href='https://unee-t.com/privacy-and-terms/'>
             Terms of Service &amp; Privacy Policy
               </a>
             </label>

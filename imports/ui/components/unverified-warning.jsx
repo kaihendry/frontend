@@ -30,7 +30,6 @@ export default connect(
   () => ({}) // Redux store to props
 )(createContainer(
   () => {
-    console.log('emails', Meteor.user() && Meteor.user().emails)
     return {
       isUserVerified: Meteor.user() ? Meteor.user().emails[0].verified : true,
       email: Meteor.user() ? Meteor.user().emails[0].address : ''

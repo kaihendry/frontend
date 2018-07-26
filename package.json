@@ -5,7 +5,8 @@
     "start": "meteor run",
     "test": "npm run lint && npm run proof",
     "lint": "standard --verbose | snazzy",
-    "proof": "TEST_BROWSER_DRIVER=puppeteer meteor test --once --driver-package meteortesting:mocha"
+    "proof": "TEST_BROWSER_DRIVER=puppeteer meteor test --once --driver-package meteortesting:mocha",
+    "test-local": "TEST_WATCH=1 meteor test --driver-package meteortesting:mocha"
   },
   "standard": {
     "parser": "babel-eslint"

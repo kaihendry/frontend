@@ -103,7 +103,12 @@ export class SignupPage extends Component {
           <div className='f7 gray mt3 lh-copy'>
             <label className='pa0 ma0 lh-copy f6 pointer mid-gray'>
               <input type='checkbox' checked={termsAgreement} onChange={this.handleTermCheckbox} />
-            By signing up, you agree to our <a className='link bondi-blue fw8' target='_blank' href='https://unee-t.com/privacy-and-terms/'>Terms of Service &amp; Privacy Policy</a></label></div>
+            By signing up, you agree to our&nbsp;
+              <a className='link bondi-blue fw8' target='_blank' href='https://unee-t.com/privacy-and-terms/'>
+            Terms of Service &amp; Privacy Policy
+              </a>
+            </label>
+          </div>
           <div className='mt3 tr'>
             <RaisedButton label='Submit' labelColor='white' backgroundColor='var(--bondi-blue)' type='submit'
               disabled={!this.isFormValid()}

@@ -6,64 +6,94 @@ import { connect } from 'react-redux'
 import { createContainer } from 'meteor/react-meteor-data'
 import { push } from 'react-router-redux'
 import FontIcon from 'material-ui/FontIcon'
-import MenuItem from 'material-ui/MenuItem'
 import RootAppBar from '../components/root-app-bar'
 import Preloader from '../preloader/preloader'
 import { setDrawerState } from '../general-actions'
 import Units, { collectionName } from '../../api/units'
-import UnitMetaData from '../../api/unit-meta-data'
 import FloatingActionButton from 'material-ui/FloatingActionButton'
+import { Tabs, Tab } from 'material-ui/Tabs'
+import SwipeableViews from 'react-swipeable-views'
+import FilteredUnitsList from './filtered-units-list'
 
 class UnitExplorer extends Component {
+  constructor (props) {
+    super(props)
+    this.state = {
+      slideIndex: 0
+    }
+  }
+
+  handleChange = (value) => {
+    this.setState({
+      slideIndex: value
+    })
+  };
+
+  handleAddCaseClicked = (id) => {
+    const { dispatch } = this.props
+    dispatch(push(`/case/new?unit=${id}`))
+  }
+
+  handleUnitClicked = (id) => {
+    const { dispatch } = this.props
+    dispatch(push(`/unit/${id}`))
+  }
+
   render () {
-    const { isLoading, unitList, dispatch } = this.props
+    const { isLoading, unitList, dispatch, currentUserId } = this.props
+    const activeUnits = unitList.filter(unitItem => unitItem.metaData && !unitItem.metaData.disabled)
+    const disabledUnits = unitList.filter(unitItem => unitItem.metaData && unitItem.metaData.disabled)
+
     if (isLoading) return <Preloader />
 
     return (
       <div className='flex flex-column flex-grow full-height'>
-        <RootAppBar title='My Units' onIconClick={() => dispatch(setDrawerState(true))} />
+        <RootAppBar title='My Units' onIconClick={() => dispatch(setDrawerState(true))} shadowless />
         <UnverifiedWarning />
-        <div className='flex flex-column flex-grow pa3 bg-very-light-gray'>
-          <div className='br2 bg-white card-shadow-1 w-100 pt2 flex flex-column'>
-            <div className='ph2 flex flex-column'>
-              <h4 className='semi-dark-gray ma0 ml1 fw5 lh-title no-shrink'>ALL UNITS</h4>
-              <div className='overflow-auto pb2'>
-                {unitList.length === 0 ? (
-                  <div className='f6 i silver ba b--moon-gray mt2 pa2 tc br1'>
-                    You have no units managed with Unee-T yet
-                  </div>
-                ) : unitList.map(({ id, name, description, metaData }) => (
-                  <MenuItem key={id} innerDivStyle={{padding: 0}} onClick={() => dispatch(push(`/unit/${id}`))}>
-                    <div className='mt2 ba b--moon-gray br1 w-100 flex items-center pa2'>
-                      <FontIcon className='material-icons' color='var(--semi-dark-gray)'>home</FontIcon>
-                      <div className='ml3 mv1 semi-dark-gray lh-copy flex-grow overflow-hidden'>
-                        <div className='ti1 ellipsis'>{metaData.displayName || name}</div>
-                        <div className='flex'>
-                          <div className='ti1 ellipsis flex-grow'>{metaData.moreInfo || description}&nbsp;</div>
-                          <div
-                            onClick={evt => {
-                              evt.stopPropagation()
-                              dispatch(push(`/case/new?unit=${id}`))
-                            }}
-                            className='f6 ellipsis ml3 pl1 mv1 bondi-blue fw5 no-shrink'
-                          >
-                            Add case
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </MenuItem>
-                ))}
+        <div className='flex-grow flex flex-column overflow-hidden'>
+          <Tabs
+            className='no-shrink'
+            onChange={this.handleChange}
+            value={this.state.slideIndex}
+            inkBarStyle={{backgroundColor: 'white'}}
+          >
+            <Tab label='Active' value={0} />
+            <Tab label='Disabled' value={1} />
+          </Tabs>
+
+          <div className='flex-grow flex flex-column overflow-auto'>
+            <SwipeableViews
+              index={this.state.slideIndex}
+              onChangeIndex={this.handleChange}
+            >
+              {/* tab 1 */}
+              <div className='flex-grow bb b--very-light-gray bg-white'>
+                <FilteredUnitsList
+                  filteredUnits={activeUnits}
+                  currentUserId={currentUserId}
+                  handleUnitClicked={this.handleUnitClicked}
+                  handleAddCaseClicked={this.handleAddCaseClicked}
+                  showAddBtn
+                  active
+                />
               </div>
-            </div>
-            <div className='absolute bottom-2 right-2'>
-              <FloatingActionButton
-                onClick={() => dispatch(push(`/unit/new`))}
-              >
-                <FontIcon className='material-icons'>add</FontIcon>
-              </FloatingActionButton>
-            </div>
+              {/* tab 2 */}
+              <div className='flex-grow bb b--very-light-gray bg-white'>
+                <FilteredUnitsList
+                  filteredUnits={disabledUnits}
+                  currentUserId={currentUserId}
+                  handleUnitClicked={this.handleUnitClicked}
+                />
+              </div>
+            </SwipeableViews>
           </div>
+        </div>
+        <div className='absolute bottom-2 right-2'>
+          <FloatingActionButton
+            onClick={() => dispatch(push(`/unit/new`))}
+          >
+            <FontIcon className='material-icons'>add</FontIcon>
+          </FloatingActionButton>
         </div>
       </div>
     )
@@ -73,7 +103,8 @@ class UnitExplorer extends Component {
 UnitExplorer.propTypes = {
   unitList: PropTypes.array,
   isLoading: PropTypes.bool,
-  unitsError: PropTypes.object
+  unitsError: PropTypes.object,
+  currentUserId: PropTypes.string
 }
 
 let unitsError
@@ -88,9 +119,10 @@ export default connect(
     })
     return {
       unitList: Units.find().fetch().map(unit => Object.assign({}, unit, {
-        metaData: UnitMetaData.findOne({bzId: unit.id}) || {}
+        metaData: unit.metaData()
       })),
       isLoading: !unitsHandle.ready(),
+      currentUserId: Meteor.userId(),
       unitsError
     }
   }, // Meteor data to props

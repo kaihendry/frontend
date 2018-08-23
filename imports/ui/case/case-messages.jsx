@@ -1,32 +1,36 @@
-/* global FileReader */
-
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import moment from 'moment'
+import { Link } from 'react-router-dom'
 import Subheader from 'material-ui/Subheader'
 import IconButton from 'material-ui/IconButton'
 import FontIcon from 'material-ui/FontIcon'
 import FloatingActionButton from 'material-ui/FloatingActionButton'
 import FlatButton from 'material-ui/FlatButton'
+import TextField from 'material-ui/TextField'
 import ContentAdd from 'material-ui/svg-icons/content/add'
-import CircularProgress from 'material-ui/CircularProgress'
 import { formatDayText } from '../../util/formatters'
 import { matchWidth } from '../../util/cloudinary-transformations'
 import { attachmentTextMatcher } from '../../util/matchers'
 import UserAvatar from '../components/user-avatar'
+import FileInput from '../components/file-input'
+import UploadPreloader from '../components/upload-preloader'
+import { imageInputEventHandler } from '../util/dom-api'
 import styles from './case.mss'
 import themes from '../components/user-themes.mss'
 import colors from '../../mui-theme/colors'
-import { Link } from 'react-router-dom'
 import {
   subheaderStyle,
   infoIconStyle,
   attachmentButtonStyle,
-  retryButtonStyle,
-  replayIconColor,
   sendIconStyle,
   addPersonCaseMsg
 } from './case.mui-styles'
+
+import {
+  whiteTextInputStyle
+} from '../components/form-controls.mui-styles'
+import ChatBotUI from './chatbot-ui'
 
 const messagePercentWidth = 0.6 // Corresponds with width/max-width set to the text and image message containers
 
@@ -85,22 +89,6 @@ class CaseMessages extends Component {
     })
   }
 
-  handleRetryUpload (evt, process) {
-    evt.preventDefault()
-
-    this.props.onRetryAttachment(process)
-  }
-
-  handleFileSelection (evt) {
-    evt.persist()
-    const file = evt.target.files[0]
-    const reader = new FileReader()
-    reader.onload = (evt) => {
-      this.props.onCreateAttachment(evt.target.result, file)
-    }
-    reader.readAsDataURL(file)
-  }
-
   render () {
     const { caseItem, comments, attachmentUploads } = this.props
     return (
@@ -112,7 +100,7 @@ class CaseMessages extends Component {
     )
   }
 
-  renderTitle ({ id, priority, nextSteps, solution }) {
+  renderTitle ({ id, nextSteps, solution }) {
     const additionalSubheaders = []
     if (nextSteps) {
       additionalSubheaders.push(
@@ -147,6 +135,7 @@ class CaseMessages extends Component {
   }
 
   renderMessages (comments, uploads) {
+    const isCurrentUserCreator = this.props.caseItem.creator === this.props.userBzLogin
     const messageList = comments.concat(uploads.map(process => ({
       'creation_time': (new Date()).toISOString(),
       creator: this.props.userBzLogin,
@@ -156,23 +145,29 @@ class CaseMessages extends Component {
     let lastDay = ''
     let currKey = 0
     this.creators = []
+    const listItems = messageList.reduce((listItems, comment) => { // Rendering all starting from the second
+      const currDay = comment['creation_time'].slice(0, 10)
+      // Checking if the day of this message is different than the previous
+      if (currDay !== lastDay) {
+        lastDay = currDay
+        // Creating a day label
+        listItems.push(this.renderDayLabel(comment, currKey++))
+      }
+      // Creating a message item
+      listItems.push(this.renderSingleMessage(comment, currKey++))
+      return listItems
+    }, [])
     return (
       <div className={[styles.messagesContainer, 'flex-grow', 'overflow-auto'].join(' ')} ref='messages'>
-        {messageList.reduce((listItems, comment) => { // Rendering all starting from the second
-          const currDay = comment['creation_time'].slice(0, 10)
-
-          // Checking if the day of this message is different than the previous
-          if (currDay !== lastDay) {
-            lastDay = currDay
-
-            // Creating a day label
-            listItems.push(this.renderDayLabel(comment, currKey++))
-          }
-
-          // Creating a message item
-          listItems.push(this.renderSingleMessage(comment, currKey++))
-          return listItems
-        }, [])}
+        { listItems.slice(0, 2)}
+        { isCurrentUserCreator &&
+          <ChatBotUI
+            caseItem={this.props.caseItem}
+            handleFileSelection={imageInputEventHandler(this.props.onCreateAttachment)}
+            onCreateAttachment={this.props.onCreateAttachment}
+          />
+        }
+        {listItems.slice(2)}
       </div>
     )
   }
@@ -242,31 +237,8 @@ class CaseMessages extends Component {
         <div className='fr f7 white absolute bottom-0 right-0 lh-dbl pr2'>
           {moment(creationTime).format('HH:mm')}
         </div>
-        {!!process && (
-          <div className='w-100 tc'>
-            <div className='relative dib bg-black-20 br-100'>
-              {process.error ? (
-                <IconButton style={retryButtonStyle} onClick={evt => this.handleRetryUpload(evt, process)}>
-                  <FontIcon className='material-icons' color={replayIconColor}>refresh</FontIcon>
-                </IconButton>
-              ) : process.percent ? (
-                <CircularProgress
-                  size={40} thickness={5} mode='determinate' value={process.percent} />
-              ) : (
-                <div className='dib'>
-                  <CircularProgress
-                    size={40} thickness={5} mode='indeterminate' />
-                </div>
-              )}
-            </div>
-            {!!process.errorMessage && (
-              <div className='relative'>
-                <div className='bg-black-30 br-pill f7 white dib ph2'>
-                  {process.errorMessage}
-                </div>
-              </div>
-            )}
-          </div>
+        {process && (
+          <UploadPreloader handleRetryUpload={this.props.onRetryAttachment} process={process} />
         )}
       </div>
     )
@@ -274,22 +246,30 @@ class CaseMessages extends Component {
 
   renderInputControls () {
     const { message } = this.state
+
     return (
-      <div className={[styles.inputRow, 'flex items-center overflow-visible'].join(' ')}>
+      <div className={[styles.inputRow, 'flex items-end overflow-visible'].join(' ')}>
         <IconButton style={attachmentButtonStyle}>
-          <label>
+          <FileInput onFileSelected={imageInputEventHandler(this.props.onCreateAttachment)}>
             <ContentAdd color={colors.main} />
-            <input type='file' className='dn' onChange={this.handleFileSelection.bind(this)} />
-          </label>
+          </FileInput>
         </IconButton>
         <inviteUserIcon />
         <div className='flex-grow relative'>
-          <input type='text' placeholder='Type your response' ref='messageInput'
-            onChange={this.handleMessageInput.bind(this)} value={message}
-            onKeyPress={event => { if (event.key === 'Enter' && message.replace(/\s/g, '').length > 0) { this.handleCreateMessage(event) } }}
-            className='input-reset bg-white br-pill ba b--moon-gray lh-input h2 ph3 dib outline-0 w-100' />
+          <TextField
+            id='chatbox'
+            hintText='Type your response'
+            underlineShow={false}
+            textareaStyle={whiteTextInputStyle}
+            multiLine
+            rowsMax={4}
+            fullWidth
+            value={message}
+            onChange={this.handleMessageInput.bind(this)}
+            ref='messageInput'
+          />
         </div>
-        <div className='mh2'>
+        <div className='mb2 pb1 mr2 ml1'>
           <FloatingActionButton mini zDepth={0} iconStyle={sendIconStyle}
             onClick={this.handleCreateMessage.bind(this)}
             disabled={message === ''}>

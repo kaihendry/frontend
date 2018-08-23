@@ -18,6 +18,10 @@ import { createReport } from './epics/create-report'
 import { changeNotificationSetting } from './epics/change-notification-setting'
 import { createUnit } from './epics/create-unit'
 import { markCaseCommentsAsRead } from './epics/mark-case-notifications-as-read'
+import { finalizeReport } from './epics/finalize-report'
+import { editReportField } from './epics/edit-report-field'
+import { addReportAttachment } from './epics/add-report-attachment'
+import { retryReportAttachment } from './epics/retry-report-attachment'
 
 export const rootEpic = combineEpics(
   createAttachment,
@@ -38,5 +42,9 @@ export const rootEpic = combineEpics(
   changeNotificationSetting,
   createUnit,
   createReport,
-  markCaseCommentsAsRead
+  markCaseCommentsAsRead,
+  finalizeReport,
+  editReportField,
+  addReportAttachment,
+  retryReportAttachment
 )

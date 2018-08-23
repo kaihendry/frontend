@@ -10,7 +10,7 @@ import moment from 'moment'
 import IconButton from 'material-ui/IconButton'
 import FontIcon from 'material-ui/FontIcon'
 import Cases, { getCaseUsers, collectionName as casesCollName } from '../../api/cases'
-import Comments from '../../api/comments'
+import Comments, { collectionName as commentsCollName } from '../../api/comments'
 import Units, { getUnitRoles, collectionName as unitsCollName } from '../../api/units'
 import PendingInvitations, { collectionName as inviteCollName } from '../../api/pending-invitations'
 import CaseFieldValues, { collectionName as cfvCollName } from '../../api/case-field-values'
@@ -40,7 +40,8 @@ export class Case extends Component {
         loadingCase !== this.props.loadingCase ||
         loadingComments !== this.props.loadingComments ||
         loadingUnit !== this.props.loadingUnit ||
-        loadingPendingInvitations !== this.props.loadingPendingInvitations
+        loadingPendingInvitations !== this.props.loadingPendingInvitations ||
+        !_.isEqual(comments, this.props.comments)
       )
     ) {
       this.props.dispatchLoadingResult({caseItem, comments, dispatch, userBzLogin, ancestorPath})
@@ -190,7 +191,7 @@ const CaseContainer = createContainer(props => {
       caseError = error
     }
   })
-  const commentsHandle = Meteor.subscribe('caseComments', caseId, {
+  const commentsHandle = Meteor.subscribe(`${commentsCollName}.byCaseId`, caseId, {
     onStop: error => {
       commentsError = error
     }
@@ -252,7 +253,7 @@ const CaseContainer = createContainer(props => {
 const connectedWrapper = withRouter(connect(
   (
     {
-      caseAttachmentUploads,
+      attachmentUploads,
       invitationState,
       invitationLoginState: { showWelcomeMessage, invitedByDetails },
       caseUsersState,
@@ -260,7 +261,7 @@ const connectedWrapper = withRouter(connect(
     },
     props
   ) => ({
-    attachmentUploads: caseAttachmentUploads[props.match.params.caseId.toString()] || [],
+    attachmentUploads: attachmentUploads[props.match.params.caseId.toString()] || [],
     invitationState,
     invitedByDetails,
     caseUsersState,
@@ -273,11 +274,11 @@ const MobileHeader = props => {
   const { caseItem, comments, dispatch, userBzLogin, ancestorPath } = props.contentProps
   const { match } = props
   const handleBack = () => {
-    const { push } = routerRedux
+    const { replace } = routerRedux
     if (match.isExact && ancestorPath) {
-      dispatch(push(ancestorPath))
+      dispatch(replace(ancestorPath))
     } else {
-      dispatch(push(props.location.pathname.split('/').slice(0, -1).join('/')))
+      dispatch(replace(props.location.pathname.split('/').slice(0, -1).join('/')))
     }
   }
   return (

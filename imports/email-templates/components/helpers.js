@@ -41,6 +41,7 @@ Unee-T is a combination of a To Do list, a Messaging System and an Issue Tracker
 
 export function optOutText (settingType, notificationId, user, optoutUrl) {
   return (`
+--
 Unee-T is a combination of a To Do list, a Messaging System and an Issue Tracker when something needs to be done in your properties
 
 To opt out of receiving "${settingType}" emails, please visit

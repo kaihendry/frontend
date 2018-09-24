@@ -18,7 +18,7 @@ export default (assignee, notificationId, settingType, caseTitle, caseId, userId
 
 Hi ${assignee.profile.name || assignee.emails[0].address.split('@')[0]},
 
-New message by ${userId}:
+New message by ${userId.profile.name}:
 
 ${message}
 

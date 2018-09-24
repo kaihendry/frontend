@@ -16,7 +16,7 @@ export default (assignee, notificationId, settingType, caseTitle, caseId, update
 
 Hi ${assignee.profile.name || assignee.emails[0].address.split('@')[0]},
 
-${caseTitle} has has a ${updateWhat} made by ${userId}.
+${caseTitle} has has a ${updateWhat} made by ${userId.profile.name}.
 
 Please follow ${url.resolve(process.env.ROOT_URL, `/case/${caseId}`)} to participate.
 

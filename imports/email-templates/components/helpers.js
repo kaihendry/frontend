@@ -21,7 +21,7 @@ function resolveServiceDomain (service) {
 
 export function optOutHtml (settingType, notificationId, user, optoutUrl) {
   return (`
-<p><a href=https://unee-t.com>Unee-T</a>, managing and sharing 'To Do's for your properties has never been easier.</p>
+<p>Unee-T, managing and sharing 'To Do's for your properties has never been easier.</p>
     <p>
       To opt out of receiving "${settingType}" emails, please visit
       <a href='${

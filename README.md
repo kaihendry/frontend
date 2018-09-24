@@ -62,3 +62,16 @@ npm install
 ```shell
 npm start
 ```
+
+# Tips
+
+## How do I figure out the email of the logged in user?
+
+Run in browser's developer console:
+
+	Meteor.user().emails[0].address
+
+## How to find user account on MongoDB given an email address foo@example.com?
+
+	./backup/connect.sh
+	db.users.findOne({'emails.address': 'foo@example.com'})

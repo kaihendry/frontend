@@ -21,7 +21,9 @@ function resolveServiceDomain (service) {
 
 export function optOutHtml (settingType, notificationId, user, optoutUrl) {
   return (`
-<p>Unee-T, managing and sharing 'To Do's for your properties has never been easier.</p>
+<p>
+Unee-T is a combination of a To Do list, a Messaging System and an Issue Tracker when something needs to be done in your properties
+</p>
     <p>
       To opt out of receiving "${settingType}" emails, please visit
       <a href='${
@@ -39,7 +41,7 @@ export function optOutHtml (settingType, notificationId, user, optoutUrl) {
 
 export function optOutText (settingType, notificationId, user, optoutUrl) {
   return (`
-Unee-T, managing and sharing 'To Do's for your properties has never been easier.
+Unee-T is a combination of a To Do list, a Messaging System and an Issue Tracker when something needs to be done in your properties
 
 To opt out of receiving "${settingType}" emails, please visit
     ${engage({

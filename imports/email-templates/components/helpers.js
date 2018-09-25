@@ -1,6 +1,10 @@
 import URL from 'url'
 import { URL as url2 } from 'meteor/url'
 
+export function address (userId) {
+  return `${userId.profile.name || userId.emails[0].address.split('@')[0]}`
+}
+
 function engage (params) {
   // where to: url
   // who: email

@@ -1,10 +1,10 @@
 import url from 'url'
-import { optOutHtml, optOutText } from './components/helpers'
+import { address, optOutHtml, optOutText } from './components/helpers'
 
 export default (assignee, notificationId, settingType, caseTitle, caseId) => ({
   subject: `Assigned to "${caseTitle}"`,
   html: `<img src="cid:logo@unee-t.com"/>
-  <p>Hi ${assignee.profile.name || assignee.emails[0].address.split('@')[0]},</p>
+  <p>Hi ${address(assignee)},</p>
 
 <p>You have been assigned the case <strong>${caseTitle}</strong> in Unee-T.</p>
 
@@ -13,7 +13,7 @@ export default (assignee, notificationId, settingType, caseTitle, caseId) => ({
 ` + optOutHtml(settingType, notificationId, assignee),
   text: `
 
-Hi ${assignee.profile.name || assignee.emails[0].address.split('@')[0]},
+Hi ${address(assignee)},
 
 You have been assigned the case ${caseTitle}.
 

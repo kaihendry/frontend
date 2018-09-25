@@ -1,18 +1,18 @@
 import url from 'url'
-import { address, optOutHtml, optOutText } from './components/helpers'
+import { resolveUserName, optOutHtml, optOutText } from './components/helpers'
 
 export default (invitee, notificationId, settingType, caseTitle, caseId) => ({
   subject: `Collaborate on "${caseTitle}"`,
   html: `<img src="cid:logo@unee-t.com"/>
 
-<p>Hi ${address(invitee)},</p>
+<p>Hi ${resolveUserName(invitee)},</p>
 
 <p>You've been invited to collaborate on a case <strong>${caseTitle}</strong> in Unee-T.</p>
 
 <p>Please follow <a href='${url.resolve(process.env.ROOT_URL, `/case/${caseId}`)}'>${url.resolve(process.env.ROOT_URL, `/case/${caseId}`)}</a> to participate.</p>
 
 ` + optOutHtml(settingType, notificationId, invitee),
-  text: `Hi ${address(invitee)},
+  text: `Hi ${resolveUserName(invitee)},
 
 You've been invited to collaborate on a case ${caseTitle} in Unee-T.
 

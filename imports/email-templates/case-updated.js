@@ -1,22 +1,22 @@
 import url from 'url'
-import { address, optOutHtml, optOutText } from './components/helpers'
+import { resolveUserName, optOutHtml, optOutText } from './components/helpers'
 
-export default (assignee, notificationId, settingType, caseTitle, caseId, updateWhat, userId) => ({
+export default (assignee, notificationId, settingType, caseTitle, caseId, updateWhat, user) => ({
   subject: `Case updated "${caseTitle}"`,
   html: `<img src="cid:logo@unee-t.com"/>
 
-<p>Hi ${address(assignee)},</p>
+<p>Hi ${resolveUserName(assignee)},</p>
 
-<p>The case <strong>${caseTitle}</strong> has had a ${updateWhat} made by ${address(userId)}.</p>
+<p>The case <strong>${caseTitle}</strong> has had a ${updateWhat} made by ${resolveUserName(user)}.</p>
 
 <p>Please follow <a href='${url.resolve(process.env.ROOT_URL, `/case/${caseId}`)}'>${url.resolve(process.env.ROOT_URL, `/case/${caseId}`)}</a> to participate.</p>
 
 ` + optOutHtml(settingType, notificationId, assignee),
   text: `
 
-Hi ${address(assignee)},
+Hi ${resolveUserName(assignee)},
 
-${caseTitle} has has a ${updateWhat} made by ${address(userId)}.
+${caseTitle} has has a ${updateWhat} made by ${resolveUserName(user)}.
 
 Please follow ${url.resolve(process.env.ROOT_URL, `/case/${caseId}`)} to participate.
 

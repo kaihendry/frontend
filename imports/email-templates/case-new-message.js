@@ -1,13 +1,13 @@
 import url from 'url'
-import { address, optOutHtml, optOutText } from './components/helpers'
+import { resolveUserName, optOutHtml, optOutText } from './components/helpers'
 
-export default (assignee, notificationId, settingType, caseTitle, caseId, userId, message) => ({
+export default (assignee, notificationId, settingType, caseTitle, caseId, user, message) => ({
   subject: `New message on case "${caseTitle}"`,
   html: `<img src="cid:logo@unee-t.com"/>
 
-<p>Hi ${address(assignee)},</p>
+<p>Hi ${resolveUserName(assignee)},</p>
 
-<p>New message by ${address(userId)}:</p>
+<p>New message by ${resolveUserName(user)}:</p>
 
 <p>${message}</p>
 
@@ -16,9 +16,9 @@ export default (assignee, notificationId, settingType, caseTitle, caseId, userId
 ` + optOutHtml(settingType, notificationId, assignee),
   text: `
 
-Hi ${address(assignee)},
+Hi ${resolveUserName(assignee)},
 
-New message by ${address(userId)}:
+New message by ${resolveUserName(user)}:
 
 ${message}
 

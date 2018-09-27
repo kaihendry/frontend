@@ -31,10 +31,7 @@ function getUserByBZId (idStr) {
 }
 
 const fromEmail = process.env.FROM_EMAIL
-let emailDomain = 'case.unee-t.com'
-if (process.env.STAGE) {
-  emailDomain = `case.${process.env.STAGE}.unee-t.com`
-}
+const emailDomain = process.env.STAGE ? `case.${process.env.STAGE}.${process.env.DOMAIN}` : `case.${process.env.DOMAIN}`
 
 function sendEmail (assignee, emailContent, notificationId, responseBugId) {
   const emailAddr = assignee.emails[0].address

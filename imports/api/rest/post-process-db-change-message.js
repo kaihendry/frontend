@@ -31,9 +31,10 @@ function getUserByBZId (idStr) {
 }
 
 const fromEmail = process.env.FROM_EMAIL
-const emailDomain = fromEmail.indexOf('<') === -1
-  ? fromEmail.split('@')[1]
-  : fromEmail.match(/<.+@(.+)>/)[1]
+var emailDomain = 'case.unee-t.com'
+if (process.env.STAGE) {
+  emailDomain = `case.${process.env.STAGE}.unee-t.com`
+}
 
 function sendEmail (assignee, emailContent, notificationId, responseBugId) {
   const emailAddr = assignee.emails[0].address

@@ -21,6 +21,7 @@ services:
        - UNIT_CREATE_LAMBDA_URL=${UNIT_CREATE_LAMBDA_URL}
        - PDFGEN_LAMBDA_URL=${PDFGEN_LAMBDA_URL}
        - STAGE=${STAGE}
+       - DOMAIN=${DOMAIN}
       logging:
             driver: awslogs
             options:

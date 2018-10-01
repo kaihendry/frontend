@@ -34,9 +34,6 @@
     "API_ACCESS_TOKEN": {
       "required": true
     },
-    "INVITE_LAMBDA_URL": {
-      "required": true
-    },
     "APIENROLL_LAMBDA_URL": {
       "required": true
     },

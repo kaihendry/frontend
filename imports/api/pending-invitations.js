@@ -146,7 +146,8 @@ export const createPendingInvitation = (email, role, isOccupant, caseId, unitId,
   console.log('Invitee updated', inviteeUser._id, Meteor.users.findOne(inviteeUser._id).receivedInvites)
 
   try {
-    HTTP.get(domain('invite'), {
+    const inviteDomain = process.env.INVITE_LAMBDA_URL || domain('invite')
+    HTTP.get(inviteDomain, {
       headers: {
         Authorization: `Bearer ${process.env.API_ACCESS_TOKEN}`
       }

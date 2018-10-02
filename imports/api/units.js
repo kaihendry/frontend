@@ -357,7 +357,8 @@ Meteor.methods({
 
       // Adding to the user to a role on BZ using lambda
       try {
-        HTTP.call('POST', domain('invite'), {
+        const inviteDomain = process.env.INVITE_LAMBDA_URL || domain('invite')
+        HTTP.call('POST', inviteDomain, {
           data: [Object.assign({_id: invitationId}, invitationObj)],
           headers: {
             Authorization: `Bearer ${process.env.API_ACCESS_TOKEN}`

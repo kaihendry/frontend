@@ -1,5 +1,5 @@
 import url from 'url'
-import { engage, resolveUserName, optOutHtml, optOutText } from './components/helpers'
+import { createEngagementLink, resolveUserName, optOutHtml, optOutText } from './components/helpers'
 
 export default (assignee, notificationId, settingType, caseTitle, caseId, user, message) => ({
   subject: `New message on case "${caseTitle}"`,
@@ -12,7 +12,7 @@ export default (assignee, notificationId, settingType, caseTitle, caseId, user, 
 <p>${message}</p>
 
 <p>Please follow <a href='${
-  engage({
+  createEngagementLink({
     url: url.resolve(process.env.ROOT_URL, `/case/${caseId}`),
     id: notificationId,
     email: assignee.emails[0].address
@@ -29,7 +29,7 @@ New message by ${resolveUserName(user)}:
   ${message}
 
   Please follow ${
-  engage({
+  createEngagementLink({
     url: url.resolve(process.env.ROOT_URL, `/case/${caseId}`),
     id: notificationId,
     email: assignee.emails[0].address

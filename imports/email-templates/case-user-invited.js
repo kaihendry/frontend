@@ -1,5 +1,5 @@
 import url from 'url'
-import { engage, resolveUserName, optOutHtml, optOutText } from './components/helpers'
+import { createEngagementLink, resolveUserName, optOutHtml, optOutText } from './components/helpers'
 
 export default (invitee, notificationId, settingType, caseTitle, caseId) => ({
   subject: `Collaborate on "${caseTitle}"`,
@@ -10,7 +10,7 @@ export default (invitee, notificationId, settingType, caseTitle, caseId) => ({
 <p>You've been invited to collaborate on a case <strong>${caseTitle}</strong> in Unee-T.</p>
 
 <p>Please follow <a href='${
-  engage({
+  createEngagementLink({
     url: url.resolve(process.env.ROOT_URL, `/case/${caseId}`),
     id: notificationId,
     email: invitee.emails[0].address
@@ -23,7 +23,7 @@ export default (invitee, notificationId, settingType, caseTitle, caseId) => ({
 You've been invited to collaborate on a case ${caseTitle} in Unee-T.
 
 Please follow ${
-  engage({
+  createEngagementLink({
     url: url.resolve(process.env.ROOT_URL, `/case/${caseId}`),
     id: notificationId,
     email: invitee.emails[0].address

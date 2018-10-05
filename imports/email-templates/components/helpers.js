@@ -8,7 +8,7 @@ export function resolveUserName (user) {
 
 // We can use this to actually see how users engaged with emails
 // https://github.com/unee-t/engagement
-export function engage (params) {
+export function createEngagementLink (params) {
   // where to: url
   // who: email
   // why: notification id
@@ -30,7 +30,7 @@ ${footer}
     <p>
       To opt out of receiving "${settingType}" emails, please visit
       <a href='${
-    engage({
+    createEngagementLink({
       url: URL.resolve(process.env.ROOT_URL, '/notification-settings'),
       id: notificationId,
       email: user.emails[0].address
@@ -48,7 +48,7 @@ export function optOutText (settingType, notificationId, user, optoutUrl) {
 ${footer}
 
 To opt out of receiving "${settingType}" emails, please visit
-    ${engage({
+    ${createEngagementLink({
       url: URL.resolve(process.env.ROOT_URL, '/notification-settings'),
       id: notificationId,
       email: user.emails[0].address

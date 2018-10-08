@@ -18,7 +18,7 @@ export default async (req, res) => {
       )
     } catch (err) {
       console.log(`⚠️  Webhook signature verification failed.`)
-      return res.sendStatus(400)
+      return res.send(400)
     }
     // Extract the object from the event.
     data = event.data
@@ -27,8 +27,12 @@ export default async (req, res) => {
     // retrieve the event data directly from the request body.
     data = req.body.data
   }
-  const object = data.object
-
+  let object
+  try {
+    object = data.object
+  } catch (err) {
+    return res.send(500, err)
+  }
   // Monitor `source.chargeable` events.
   if (
     object.object === 'source' &&
@@ -45,7 +49,7 @@ export default async (req, res) => {
         order.metadata.status === 'paid' ||
         order.metadata.status === 'failed'
     ) {
-      return res.sendStatus(403)
+      return res.send(403)
     }
 
     // Note: We're setting an idempotency key below on the charge creation to
@@ -118,5 +122,5 @@ export default async (req, res) => {
   }
 
   // Return a 200 success code to Stripe.
-  res.sendStatus(200)
+  res.send(200)
 }

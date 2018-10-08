@@ -32,6 +32,7 @@
     "react-redux": "^5.0.5",
     "react-router-dom": "^4.1.1",
     "react-router-redux": "^5.0.0-alpha.6",
+    "react-stripe-elements": "^2.0.1",
     "react-swipeable-views": "^0.12.13",
     "react-transition-group": "^2.3.1",
     "redux": "^3.7.1",

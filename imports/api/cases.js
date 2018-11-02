@@ -8,6 +8,8 @@ import { makeAssociationFactory, withUsers, withDocs } from './base/associations
 import { serverHelpers } from './units'
 import UnitMetaData, { collectionName as unitMetaCollName } from './unit-meta-data'
 import { emailValidator } from '../util/validators'
+import { logger } from '../util/logger'
+
 import
 PendingInvitations,
 {
@@ -166,7 +168,7 @@ export const toggleParticipants = (loginNames, isAdd, caseId, clientCollection, 
       callAPI('put', `/rest/bug/${caseId}`, payload, false, true)
 
       reloadFunc()
-      loginNames.forEach(email => console.log(`${email} was ${isAdd ? '' : 'un'}subscribed to BZ case ${caseId}`))
+      loginNames.forEach(email => logger.info(`${email} was ${isAdd ? '' : 'un'}subscribed to BZ case ${caseId}`))
     } catch (e) {
       console.error({
         ...errorLogParams,
@@ -435,7 +437,7 @@ Meteor.methods({
         if (conflictError) throw new Meteor.Error('Could not create case for new assignee: ' + conflictError)
       }
 
-      console.log('Creating case', params)
+      logger.info('Creating case: %j foobar', params)
       const normalizedParams = Object.keys(params).reduce((all, paramName) => {
         all[caseServerFieldMapping[paramName] || paramName] = params[paramName]
         return all
@@ -452,7 +454,7 @@ Meteor.methods({
       try {
         const { data } = callAPI('post', '/rest/bug', normalizedParams, false, true)
         newCaseId = data.id
-        console.log(`a new case has been created by user ${Meteor.userId()}, case id: ${newCaseId}`)
+        logger.info(`a new case has been created by user ${Meteor.userId()}, case id: ${newCaseId}`)
         // TODO: Add real time update handler usage
       } catch (e) {
         console.error({
@@ -549,7 +551,7 @@ Meteor.methods({
             api_key: apiKey
           }, false, true)
           reloadCaseFields(caseId, ['assignee', 'assigneeDetail'])
-          console.log(`${user.login} was assigned to case ${caseId}`)
+          logger.info(`${user.login} was assigned to case ${caseId}`)
         } catch (e) {
           console.error({
             user: Meteor.userId(),

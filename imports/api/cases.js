@@ -170,7 +170,7 @@ export const toggleParticipants = (loginNames, isAdd, caseId, clientCollection, 
       reloadFunc()
       loginNames.forEach(email => logger.info(`${email} was ${isAdd ? '' : 'un'}subscribed to BZ case ${caseId}`))
     } catch (e) {
-      console.error({
+      logger.error({
         ...errorLogParams,
         error: e
       })
@@ -359,7 +359,7 @@ export const fieldEditMethodMaker = ({ editableFields, methodName, publicationOb
         }, {})
         publicationObj.handleChanged(caseId, updatedSet)
       } catch (e) {
-        console.error({
+        logger.error({
           user: Meteor.userId(),
           method: methodName,
           args: [caseId, changeSet],
@@ -416,7 +416,7 @@ Meteor.methods({
       try {
         unitItem = serverHelpers.getAPIUnitByName(params.selectedUnit, apiKey)
       } catch (e) {
-        console.error(e)
+        logger.error(e)
         throw new Meteor.Error('API error')
       }
 
@@ -457,7 +457,7 @@ Meteor.methods({
         logger.info(`a new case has been created by user ${Meteor.userId()}, case id: ${newCaseId}`)
         // TODO: Add real time update handler usage
       } catch (e) {
-        console.error({
+        logger.error({
           user: Meteor.userId(),
           method: `${collectionName}.insert`,
           args: [params],
@@ -478,7 +478,7 @@ Meteor.methods({
         try {
           callAPI('put', `/rest/bug/${newCaseId}`, payload, false, true)
         } catch (e) {
-          console.error({
+          logger.error({
             user: Meteor.userId(),
             method: `${collectionName}.insert`,
             args: [params],
@@ -553,7 +553,7 @@ Meteor.methods({
           reloadCaseFields(caseId, ['assignee', 'assigneeDetail'])
           logger.info(`${user.login} was assigned to case ${caseId}`)
         } catch (e) {
-          console.error({
+          logger.error({
             user: Meteor.userId(),
             method: `${collectionName}.changeAssignee`,
             args: [user, caseId],

@@ -1,5 +1,5 @@
 import inviteUserUtil from '../../util/user-invitation'
-import { logger } from '../util/logger'
+import { logger } from '../../util/logger'
 
 export default (req, res) => {
   const { inviteUser } = inviteUserUtil

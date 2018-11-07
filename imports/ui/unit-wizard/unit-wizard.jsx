@@ -3,6 +3,7 @@ import { connect } from 'react-redux'
 import { createContainer } from 'meteor/react-meteor-data'
 import PropTypes from 'prop-types'
 import SelectField from 'material-ui/SelectField'
+import AutoComplete from 'material-ui/AutoComplete'
 import RaisedButton from 'material-ui/RaisedButton'
 import CircularProgress from 'material-ui/CircularProgress'
 import MenuItem from 'material-ui/MenuItem'
@@ -43,6 +44,21 @@ const objectTypeFields = [
   'role'
 ]
 
+const countryList = countries.map(({ alpha2: code, name }) => {
+  // Manual ellipsis
+  const displayName = name.length > 34 // max tested length on an iphone 5 screen width
+    ? name.slice(0, 31) + '...'
+    : name
+  return (
+    {
+      text: displayName,
+      value: (
+        <MenuItem key={code} value={code} primaryText={displayName} />
+      )
+    }
+  )
+})
+
 class UnitWizard extends Component {
   constructor () {
     super(...arguments)
@@ -56,12 +72,15 @@ class UnitWizard extends Component {
       state: '',
       zipCode: '',
       country: null,
-      isOccupant: false
+      isOccupant: false,
+      searchText: null,
+      countryValid: null
     }
   }
   createTextStateHandler = stateVarName => evt => this.setState({
     [stateVarName]: evt.target.value
   })
+
   checkIsFormInvalid () {
     return !!mandatoryFields.find(fName => !this.state[fName])
   }
@@ -72,12 +91,33 @@ class UnitWizard extends Component {
     }, {})
     this.props.dispatch(createUnit(creationObject))
   }
+
+  handleUpdateInput = (value) => {
+    this.setState({
+      countryValid: null,
+      searchText: value
+    })
+  }
+  handleNewRequest = () => {
+    const countryNameChecker = countries.filter(x => x.name === this.state.searchText)
+    if (countryNameChecker.length === 0) {
+      this.setState({
+        countryValid: 'Check country name again.',
+        searchText: ''
+      })
+    } else {
+      this.setState({
+        country: this.state.searchText
+      })
+    }
+  }
+
   render () {
-    const { name, type, role, moreInfo, streetAddress, city, zipCode, country, state, isOccupant } = this.state
+    const { name, type, role, moreInfo, streetAddress, city, zipCode, state, isOccupant } = this.state
     const { inProgress, error, dispatch } = this.props
     return (
       <div className='full-height flex flex-column overflow-hidden'>
-        <InnerAppBar title='Add Unit' onBack={() => dispatch(goBack())} />
+        <InnerAppBar title='Enter Unit Details' onBack={() => dispatch(goBack())} />
         <form className='overflow-auto flex-grow flex flex-column'>
           <div className='flex-grow bg-very-light-gray'>
             <div className='bg-white card-shadow-1 pa3'>
@@ -151,27 +191,19 @@ class UnitWizard extends Component {
                 disabled={inProgress}
                 onChange={this.createTextStateHandler('city')}
               />
-              <SelectField
+              <AutoComplete
                 floatingLabelText='Country'
                 fullWidth
-                value={country}
-                disabled={inProgress}
-                onChange={(evt, idx, val) => {
-                  this.setState({
-                    country: val
-                  })
-                }}
-              >
-                {countries.map(({ alpha2: code, name }) => {
-                  // Manual ellipsis
-                  const displayName = name.length > 34 // max tested length on an iphone 5 screen width
-                    ? name.slice(0, 31) + '...'
-                    : name
-                  return (
-                    <MenuItem key={code} value={code} primaryText={displayName} />
-                  )
-                })}
-              </SelectField>
+                anchorOrigin={{ vertical: 'top', horizontal: 'left' }}
+                targetOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+                filter={AutoComplete.caseInsensitiveFilter}
+                maxSearchResults={4}
+                onNewRequest={this.handleNewRequest}
+                dataSource={countryList}
+                onUpdateInput={this.handleUpdateInput}
+                searchText={this.state.searchText}
+                errorText={this.state.countryValid}
+              />
               <InputRow
                 label='Administrative Region'
                 value={state}
@@ -185,24 +217,24 @@ class UnitWizard extends Component {
                 disabled={inProgress}
                 onChange={this.createTextStateHandler('zipCode')}
               />
-              <RaisedButton
-                className='mt3'
-                fullWidth
-                primary
-                disabled={this.checkIsFormInvalid() || inProgress}
-                onClick={this.handleAddClicked}
-              >
-                {inProgress ? (
-                  <div className='absolute top-0 right-0 bottom-0 left-0'>
-                    <CircularProgress color='white' size={30} />
-                  </div>
-                ) : (
-                  <div className='f4 white'>Add Unit</div>
-                )}
-              </RaisedButton>
             </div>
           </div>
         </form>
+        <RaisedButton
+          className='mt3'
+          fullWidth
+          primary
+          disabled={this.checkIsFormInvalid() || inProgress}
+          onClick={this.handleAddClicked}
+        >
+          {inProgress ? (
+            <div className='absolute top-0 right-0 bottom-0 left-0'>
+              <CircularProgress color='white' size={30} />
+            </div>
+          ) : (
+            <div className='f4 white'>Add Unit</div>
+          )}
+        </RaisedButton>
         <ErrorDialog show={!!error} text={error || ''} onDismissed={() => dispatch(clearError())} />
       </div>
     )

@@ -42,6 +42,12 @@
     },
     "UNIT_CREATE_LAMBDA_URL": {
       "required": true
+    },
+    "PDFGEN_LAMBDA_URL": {
+      "required": true
+    },
+    "PDFCONVERT_LAMBDA_URL": {
+      "required": true
     }
   },
   "formation": {

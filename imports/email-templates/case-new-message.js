@@ -1,6 +1,6 @@
 import url from 'url'
-import { optOutHtml, optOutText } from './components/helpers'
 import { matchWidth } from '../util/cloudinary-transformations'
+import { createEngagementLink, resolveUserName, optOutHtml, optOutText } from './components/helpers'
 
 function linkAttachment (message) {
   const msgParts = message.trim().split(/\s+/)
@@ -14,28 +14,42 @@ function linkAttachment (message) {
   return message
 }
 
-export default (assignee, notificationId, settingType, caseTitle, caseId, userId, message) => ({
+export default (assignee, notificationId, settingType, caseTitle, caseId, user, message) => ({
   subject: `New message on case "${caseTitle}"`,
   html: `<img src="cid:logo@unee-t.com"/>
 
-<p>Hi ${assignee.profile.name || assignee.emails[0].address.split('@')[0]},</p>
+<p>Hi ${resolveUserName(assignee)},</p>
 
-<p>New message by ${userId.profile.name}:</p>
+<p>New message by ${resolveUserName(user)}:</p>
 
-<p>${linkAttachment(message)}</p>
+<p><strong>${linkAttachment(message)}</strong></p>
 
-<p>Please follow <a href='${url.resolve(process.env.ROOT_URL, `/case/${caseId}`)}'>${url.resolve(process.env.ROOT_URL, `/case/${caseId}`)}</a> to participate.</p>
+<p>Please follow <a href='${
+  createEngagementLink({
+    url: url.resolve(process.env.ROOT_URL, `/case/${caseId}`),
+    id: notificationId,
+    email: assignee.emails[0].address
+  })
+  }'>${url.resolve(process.env.ROOT_URL, `/case/${caseId}`)}</a> to participate.</p>
 
-` + optOutHtml(settingType, notificationId, assignee),
-  text: `Hi ${assignee.profile.name || assignee.emails[0].address.split('@')[0]},
+  ` + optOutHtml(settingType, notificationId, assignee),
+  text: `
 
-New message by ${userId}:
+Hi ${resolveUserName(assignee)},
 
-${message}
+New message by ${resolveUserName(user)}:
 
-Please follow ${url.resolve(process.env.ROOT_URL, `/case/${caseId}`)} to participate.
+ > ${message}
 
-` + optOutText(settingType, notificationId, assignee),
+  Please follow ${
+  createEngagementLink({
+    url: url.resolve(process.env.ROOT_URL, `/case/${caseId}`),
+    id: notificationId,
+    email: assignee.emails[0].address
+  })
+  } to participate.
+
+  ` + optOutText(settingType, notificationId, assignee),
   attachments: [{
     path: 'https://s3-ap-southeast-1.amazonaws.com/prod-media-unee-t/2018-06-14/unee-t_logo_email.png',
     cid: 'logo@unee-t.com'

@@ -10,9 +10,10 @@ import MenuItem from 'material-ui/MenuItem'
 import FontIcon from 'material-ui/FontIcon'
 import Divider from 'material-ui/Divider'
 import { renderAppBarLeft, renderCurrUserAvatar } from '../util/app-bar-utils'
+import {ReportIcon} from '../report/report-icon'
 
 class SideMenu extends Component {
-  linkDrawerItem = ({href, iconName, text, isExternal}, doHighlight = false) => {
+  linkDrawerItem = ({href, iconName, iconRenderer, text, isExternal}, doHighlight = false) => {
     const { dispatch } = this.props
     return (
       <Link className='link' to={href} target={isExternal ? '_blank' : null}>
@@ -20,7 +21,7 @@ class SideMenu extends Component {
           <MenuItem onClick={isExternal ? undefined : () => dispatch(setDrawerState(false))}>
             <div className='flex items-center pv2 mv1'>
               <div className='w1-5 lh-title tc'>
-                <FontIcon className='material-icons' color='var(--mid-gray)'>{iconName}</FontIcon>
+                { iconName ? (<FontIcon className='material-icons' color='var(--mid-gray)'>{iconName}</FontIcon>) : (iconRenderer) }
               </div>
               <div className='ml4 mid-gray'>{text}</div>
             </div>
@@ -38,6 +39,22 @@ class SideMenu extends Component {
 
   render () {
     const { user, isDrawerOpen, dispatch } = this.props
+    const supportEmailBody = user && `What were you trying to do?
+
+### PLEASE FILL IN ###
+
+What happened?
+
+### PLEASE FILL IN ###
+
+What should have happened?
+
+### PLEASE FILL IN ###
+
+Please insert any screenshots or error messages that might help us! 🙏
+
+DEBUG INFO:
+user: ${user.emails[0].address}`
     return user ? (
       <Drawer
         docked={false}
@@ -59,22 +76,21 @@ class SideMenu extends Component {
           iconName: 'location_on',
           text: 'Units'
         })}
+        {this.routeDrawerItem('/report', {
+          href: '/report',
+          iconRenderer: <ReportIcon isFinalized />,
+          text: 'Inspection Reports'
+        })}
         {this.routeDrawerItem('/case', {
           href: '/case',
           iconName: 'card_travel',
-          text: 'Cases'
+          text: 'Open Cases'
         })}
         <Divider />
         {this.linkDrawerItem({
-          href: 'https://unee-t.com/contact-support/',
+          href: 'mailto:support@unee-t.com?subject=' + window.location.href + '&body=' + encodeURIComponent(supportEmailBody),
           iconName: 'live_help',
           text: 'Support',
-          isExternal: true
-        })}
-        {this.linkDrawerItem({
-          href: 'https://forum.unee-t.com/',
-          iconName: 'forum',
-          text: 'Forum',
           isExternal: true
         })}
         {this.linkDrawerItem({

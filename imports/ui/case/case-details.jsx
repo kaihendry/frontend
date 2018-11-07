@@ -6,7 +6,6 @@ import RaisedButton from 'material-ui/RaisedButton'
 import IconButton from 'material-ui/IconButton'
 import _, { negate, flow } from 'lodash'
 import moment from 'moment'
-import themes from '../components/user-themes.mss'
 import { attachmentTextMatcher, placeholderEmailMatcher } from '../../util/matchers'
 import { userInfoItem } from '/imports/util/user.js'
 import { fitDimensions } from '../../util/cloudinary-transformations'
@@ -16,8 +15,7 @@ import { TYPE_CC, TYPE_ASSIGNED } from '../../api/pending-invitations'
 import EditableItem from '../components/editable-item'
 import ErrorDialog from '../dialogs/error-dialog'
 import { infoItemLabel, infoItemMembers, InfoItemContainer, InfoItemRow } from '../util/static-info-rendering'
-
-import { addPersonIconStyle } from './case.mui-styles'
+import AddUserControlLine from '../components/add-user-control-line'
 
 const mediaItemsPadding = 4 // Corresponds with the classNames set to the media items
 const mediaItemRowCount = 3
@@ -114,10 +112,23 @@ class CaseDetails extends Component {
     <InfoItemContainer>
       <div className='flex'>
         <div className='flex-grow'>
-          {infoItemMembers('Category:', category || '---')}
+          {infoItemMembers('Category:', category)}
         </div>
         <div className='flex-grow'>
-          {infoItemMembers('Sub-Category:', subCategory || '---')}
+          {infoItemMembers('Sub-Category:', subCategory)}
+        </div>
+      </div>
+    </InfoItemContainer>
+  )
+
+  renderPrioritySeverityLine = ({priority, severity}) => (
+    <InfoItemContainer>
+      <div className='flex'>
+        <div className='flex-grow'>
+          {infoItemMembers('Priority:', priority)}
+        </div>
+        <div className='flex-grow'>
+          {infoItemMembers('Severity:', severity)}
         </div>
       </div>
     </InfoItemContainer>
@@ -222,11 +233,8 @@ class CaseDetails extends Component {
         )))}
         {pendingUsers.map((user, ind) => userInfoItem(user, () => <span className='f7 warn-crimson b'>Pending</span>))}
         <Link to={`${match.url}/invite`}
-          className='mt2 link flex items-center outline-0'>
-          <div className={[themes.sized, themes.size1, 'br-100 ba b--moon-gray bg-transparent tc'].join(' ')}>
-            <FontIcon className='material-icons' style={addPersonIconStyle}>person_add</FontIcon>
-          </div>
-          <div className='ml2 pl1 bondi-blue'>Invite users to case</div>
+          className='mt2 link outline-0 db'>
+          <AddUserControlLine instruction='Invite users to case' />
         </Link>
         <InviteDialog
           {...{onNewUserInvited, invitationState}}
@@ -332,7 +340,7 @@ class CaseDetails extends Component {
           />
           {solutionDeadline && (
             <div className='mt2 f7 warn-crimson b'>
-              Deadline: {moment(solutionDeadline).format('D MMM YYYY, h:mm')} hrs
+              Deadline: {moment(solutionDeadline).format('YYYY-MM-DD, h:mm')} hrs
             </div>
           )}
         </InfoItemContainer>
@@ -345,7 +353,7 @@ class CaseDetails extends Component {
           />
           {solutionDeadline && (
             <div className='mt2 f7 warn-crimson b'>
-              Deadline: {moment(nextStepsBy).format('D MMM YYYY, h:mm')} hrs
+              Deadline: {moment(nextStepsBy).format('YYYY-MM-DD, h:mm')} hrs
             </div>
           )}
         </InfoItemContainer>
@@ -368,6 +376,7 @@ class CaseDetails extends Component {
         {this.renderUnitDescription(unitItem)}
         {this.renderStatusLine(caseItem, cfvDictionary)}
         {this.renderCategoriesLine(caseItem)}
+        {this.renderPrioritySeverityLine(caseItem)}
         {this.renderCreatedBy(caseUserTypes.creator)}
         {this.renderAssignedTo(caseUserTypes.assignee, normalizedUnitUsers, pendingInvitations)}
         {this.renderPeopleInvolved(

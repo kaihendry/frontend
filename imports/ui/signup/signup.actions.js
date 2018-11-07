@@ -1,6 +1,7 @@
 // import { Meteor } from 'meteor/meteor'
 import { Accounts } from 'meteor/accounts-base'
 import routerRedux from 'react-router-redux'
+export const SIGNUP_ERROR = 'signup_error'
 
 export function submitSignupInfo (info) {
   const { push } = routerRedux
@@ -9,15 +10,16 @@ export function submitSignupInfo (info) {
       email: info.emailAddress,
       password: info.password,
       profile: {
-        phone: info.phoneNumber,
-        name: info.fullName,
-        country: info.country,
-        bzLogin: info.bzLogin,
-        bzPass: info.bzPass
       }
     }, (err) => {
-      if (err) return console.error(err)
-      dispatch(push('/case'))
+      if (err) {
+        dispatch({
+          type: SIGNUP_ERROR,
+          value: err
+        })
+      } else {
+        dispatch(push('/unit'))
+      }
     })
   }
 }

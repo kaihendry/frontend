@@ -9,6 +9,22 @@ export const makeMatchingUser = bzUser => {
   return regUser ? Object.assign({}, bzUser, regUser.profile) : bzUser
 }
 
+export const findOrCreateUser = email => {
+  let inviteeUser = Accounts.findUserByEmail(email)
+  if (!inviteeUser) {
+    // Using Meteor accounts package to create the user with no signup
+    Accounts.createUser({
+      email,
+      profile: {
+        isLimited: true
+      }
+    })
+    console.log(`new user created for ${email}`)
+    inviteeUser = Accounts.findUserByEmail(email)
+  }
+  return inviteeUser
+}
+
 const verifyUserLogin = handle => {
   if (!handle.userId) {
     handle.ready()
@@ -127,6 +143,7 @@ Meteor.methods({
         email: invitedUser.emails[0].address,
         pw: randPass,
         caseId: invitedUser.receivedInvites[0].caseId,
+        unitId: invitedUser.receivedInvites[0].unitId,
         invitedByDetails
       }
     }
@@ -148,5 +165,37 @@ Meteor.methods({
         [`notificationSettings.${settingName}`]: !!isOn
       }
     })
+  },
+  'users.forgotPass': function (userEmail) {
+    if (Meteor.isServer) {
+      try {
+        const user = Accounts.findUserByEmail(userEmail)
+        let lastResetTime
+        if (user) {
+          lastResetTime = user.lastPassResetAt
+          Meteor.users.update(user._id, {
+            $set: {
+              lastPassResetAt: new Date()
+            }
+          })
+        }
+
+        // Checking if there was no last time the pass was reset (also if no user) or more than a minute has passed
+        if (!lastResetTime || Date.now() - lastResetTime.getTime() > 6e4) {
+          console.log('Sending password reset email to ', userEmail)
+          return Accounts.sendResetPasswordEmail(user._id, userEmail)
+        } else {
+          throw new Meteor.Error('Please wait up to 1 minute before trying again')
+        }
+      } catch (e) {
+        console.error('Error occurred on password reset request', e)
+        throw e
+      }
+    }
+  },
+  'resendEmail': function () {
+    if (Meteor.isServer) {
+      return Accounts.sendVerificationEmail(Meteor.userId())
+    }
   }
 })

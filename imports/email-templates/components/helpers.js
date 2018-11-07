@@ -1,7 +1,14 @@
 import URL from 'url'
 import { URL as url2 } from 'meteor/url'
+import { footer } from '../../ui/util/marketing'
 
-function engage (params) {
+export function resolveUserName (user) {
+  return `${user.profile.name || user.emails[0].address.split('@')[0]}`
+}
+
+// We can use this to actually see how users engaged with emails
+// https://github.com/unee-t/engagement
+export function createEngagementLink (params) {
   // where to: url
   // who: email
   // why: notification id
@@ -10,22 +17,20 @@ function engage (params) {
   return URL.format(engagementURL)
 }
 
-// Does not work on localhost domains, since we assume 4 parts: $service.$stage.unee-t.com
 function resolveServiceDomain (service) {
-  const url = URL.parse(process.env.ROOT_URL)
-  const hparts = url.hostname.split('.')
-  hparts[0] = service
-  url.host = hparts.join('.')
-  return URL.format(url)
+  const domain = process.env.STAGE ? `${service}.${process.env.STAGE}.${process.env.DOMAIN}` : `${service}.${process.env.DOMAIN}`
+  return URL.format('https://' + domain)
 }
 
 export function optOutHtml (settingType, notificationId, user, optoutUrl) {
   return (`
-<p><a href=https://unee-t.com>Unee-T</a>, managing and sharing 'To Do's for your properties has never been easier.</p>
+<p>
+${footer}
+</p>
     <p>
       To opt out of receiving "${settingType}" emails, please visit
       <a href='${
-    engage({
+    createEngagementLink({
       url: URL.resolve(process.env.ROOT_URL, '/notification-settings'),
       id: notificationId,
       email: user.emails[0].address
@@ -39,10 +44,11 @@ export function optOutHtml (settingType, notificationId, user, optoutUrl) {
 
 export function optOutText (settingType, notificationId, user, optoutUrl) {
   return (`
-Unee-T, managing and sharing 'To Do's for your properties has never been easier.
+--
+${footer}
 
 To opt out of receiving "${settingType}" emails, please visit
-    ${engage({
+    ${createEngagementLink({
       url: URL.resolve(process.env.ROOT_URL, '/notification-settings'),
       id: notificationId,
       email: user.emails[0].address

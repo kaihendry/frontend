@@ -10,12 +10,12 @@ import moment from 'moment'
 import IconButton from 'material-ui/IconButton'
 import FontIcon from 'material-ui/FontIcon'
 import Cases, { getCaseUsers, collectionName as casesCollName } from '../../api/cases'
-import Comments from '../../api/comments'
+import Comments, { collectionName as commentsCollName } from '../../api/comments'
 import Units, { getUnitRoles, collectionName as unitsCollName } from '../../api/units'
 import PendingInvitations, { collectionName as inviteCollName } from '../../api/pending-invitations'
 import CaseFieldValues, { collectionName as cfvCollName } from '../../api/case-field-values'
 import InnerAppBar from '../components/inner-app-bar'
-import actions from './case.actions'
+import actions, { markNotificationsAsRead } from './case.actions'
 import MaximizedAttachment from './maximized-attachment'
 import CaseMessages from './case-messages'
 import CaseDetails from './case-details'
@@ -26,19 +26,25 @@ import Preloader from '../preloader/preloader'
 import { makeMatchingUser } from '../../api/custom-users'
 
 export class Case extends Component {
+  componentDidMount () {
+    const { match, dispatch } = this.props
+    const { caseId } = match.params
+    dispatch(markNotificationsAsRead(caseId))
+  }
   componentWillReceiveProps ({
     caseItem, comments, loadingCase, loadingComments, loadingUnit, loadingPendingInvitations, caseError, dispatch,
-    userEmail, ancestorPath
+    userBzLogin, ancestorPath
   }) {
     if (!loadingCase && !loadingComments && !loadingUnit && !loadingPendingInvitations && !caseError &&
       (
         loadingCase !== this.props.loadingCase ||
         loadingComments !== this.props.loadingComments ||
         loadingUnit !== this.props.loadingUnit ||
-        loadingPendingInvitations !== this.props.loadingPendingInvitations
+        loadingPendingInvitations !== this.props.loadingPendingInvitations ||
+        !_.isEqual(comments, this.props.comments)
       )
     ) {
-      this.props.dispatchLoadingResult({caseItem, comments, dispatch, userEmail, ancestorPath})
+      this.props.dispatchLoadingResult({caseItem, comments, dispatch, userBzLogin, ancestorPath})
     }
   }
   navigateToAttachment (id) {
@@ -49,7 +55,7 @@ export class Case extends Component {
   render () {
     const {
       caseItem, comments, loadingCase, loadingComments, loadingUnit, caseError, commentsError, unitError, unitItem,
-      attachmentUploads, match, userEmail, dispatch, unitUsers, invitationState, caseUserTypes,
+      attachmentUploads, match, userBzLogin, dispatch, unitUsers, invitationState, caseUserTypes,
       loadingPendingInvitations, pendingInvitations, showWelcomeDialog, invitedByDetails,
       cfvDictionary, loadingCfv, cfvError, caseUsersState
     } = this.props
@@ -98,7 +104,7 @@ export class Case extends Component {
             <Switch>
               <Route exact path={match.url} render={() => (
                 <CaseMessages
-                  {...{caseItem, comments, attachmentUploads, userEmail}}
+                  {...{caseItem, comments, attachmentUploads, userBzLogin}}
                   onCreateComment={text => dispatch(createComment(text, caseId))}
                   onCreateAttachment={(preview, file) => dispatch(createAttachment(preview, file, caseId))}
                   onRetryAttachment={process => dispatch(retryAttachment(process))}
@@ -156,7 +162,7 @@ Case.propTypes = {
   loadingComments: PropTypes.bool,
   commentsError: PropTypes.object,
   comments: PropTypes.array,
-  userEmail: PropTypes.string,
+  userBzLogin: PropTypes.string,
   dispatchLoadingResult: PropTypes.func.isRequired,
   attachmentUploads: PropTypes.array,
   loadingUnit: PropTypes.bool,
@@ -185,7 +191,7 @@ const CaseContainer = createContainer(props => {
       caseError = error
     }
   })
-  const commentsHandle = Meteor.subscribe('caseComments', caseId, {
+  const commentsHandle = Meteor.subscribe(`${commentsCollName}.byCaseId`, caseId, {
     onStop: error => {
       commentsError = error
     }
@@ -206,6 +212,8 @@ const CaseContainer = createContainer(props => {
     }
   })
 
+  const bzLoginHandle = Meteor.subscribe('users.myBzLogin')
+
   const caseUserTypes = currCase ? getCaseUsers(currCase) : null
   const unitRoles = currUnit && getUnitRoles(currUnit)
   return {
@@ -218,7 +226,7 @@ const CaseContainer = createContainer(props => {
       const creatorUser = Meteor.users.findOne({ 'bugzillaCreds.login': comment.creator })
       return { ...comment, creatorUser }
     }),
-    userEmail: Meteor.user() ? Meteor.user().emails[0].address : null,
+    userBzLogin: bzLoginHandle.ready() ? Meteor.user().bugzillaCreds.login : null,
     loadingUnit: !unitHandle || !unitHandle.ready(),
     unitError,
     unitItem: currUnit,
@@ -245,7 +253,7 @@ const CaseContainer = createContainer(props => {
 const connectedWrapper = withRouter(connect(
   (
     {
-      caseAttachmentUploads,
+      attachmentUploads,
       invitationState,
       invitationLoginState: { showWelcomeMessage, invitedByDetails },
       caseUsersState,
@@ -253,7 +261,7 @@ const connectedWrapper = withRouter(connect(
     },
     props
   ) => ({
-    attachmentUploads: caseAttachmentUploads[props.match.params.caseId.toString()] || [],
+    attachmentUploads: attachmentUploads[props.match.params.caseId.toString()] || [],
     invitationState,
     invitedByDetails,
     caseUsersState,
@@ -263,14 +271,14 @@ const connectedWrapper = withRouter(connect(
 )(CaseContainer))
 
 const MobileHeader = props => {
-  const { caseItem, comments, dispatch, userEmail, ancestorPath } = props.contentProps
+  const { caseItem, comments, dispatch, userBzLogin, ancestorPath } = props.contentProps
   const { match } = props
   const handleBack = () => {
-    const { push } = routerRedux
+    const { replace } = routerRedux
     if (match.isExact && ancestorPath) {
-      dispatch(push(ancestorPath))
+      dispatch(replace(ancestorPath))
     } else {
-      dispatch(push(props.location.pathname.split('/').slice(0, -1).join('/')))
+      dispatch(replace(props.location.pathname.split('/').slice(0, -1).join('/')))
     }
   }
   return (
@@ -278,9 +286,9 @@ const MobileHeader = props => {
       <Route exact path={`${match.url}/attachment/:attachId`} render={subProps => {
         const { attachId } = subProps.match.params
         const selectedComment = _.find(comments, {id: parseInt(attachId)})
-        const { creationTime, creator } = selectedComment
+        const { creation_time: creationTime, creator } = selectedComment
         const timeText = `${formatDayText(creationTime)}, ${moment(creationTime).format('HH:mm')}`
-        const creatorText = userEmail === creator ? 'You' : creator
+        const creatorText = userBzLogin === creator ? 'You' : creator
         return (
           <div className='fixed top-0 w-100 bg-black-20 flex items-center'>
             <IconButton onClick={() => handleBack(match.url)}>

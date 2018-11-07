@@ -1,55 +1,181 @@
 import React, { Component } from 'react'
 import { Meteor } from 'meteor/meteor'
 import PropTypes from 'prop-types'
+import UnverifiedWarning from '../components/unverified-warning'
 import { connect } from 'react-redux'
 import { createContainer } from 'meteor/react-meteor-data'
 import { push } from 'react-router-redux'
 import FontIcon from 'material-ui/FontIcon'
-import MenuItem from 'material-ui/MenuItem'
 import RootAppBar from '../components/root-app-bar'
 import Preloader from '../preloader/preloader'
 import { setDrawerState } from '../general-actions'
 import Units, { collectionName } from '../../api/units'
-import { Link } from 'react-router-dom'
+import FloatingActionButton from 'material-ui/FloatingActionButton'
+import FilteredUnits from './filtered-units'
+import { SORT_BY, sorters } from '../explorer-components/sort-items'
+import { NoItemMsg } from '../explorer-components/no-item-msg'
+import { Sorter } from '../explorer-components/sorter'
+import { StatusFilter } from '../explorer-components/status-filter'
+import { RoleFilter } from '../explorer-components/role-filter'
 
 class UnitExplorer extends Component {
-  render () {
-    const { isLoading, unitList, dispatch } = this.props
-    if (isLoading) return <Preloader />
+  constructor (props) {
+    super(props)
+    this.state = {
+      slideIndex: 0,
+      searchResult: [],
+      searchMode: false,
+      searchText: '',
+      selectedStatusFilter: null,
+      selectedRoleFilter: null,
+      sortBy: null
+    }
+  }
 
+  handleStatusFilterClicked = (event, index, selectedStatusFilter) => {
+    this.setState({
+      selectedStatusFilter: selectedStatusFilter
+    })
+  }
+
+  handleRoleFilterClicked = (event, index, selectedRoleFilter) => {
+    this.setState({
+      selectedRoleFilter: selectedRoleFilter
+    })
+  }
+
+  handleSortClicked = (event, index, value) => {
+    this.setState({
+      sortBy: value
+    })
+  }
+
+  handleAddCaseClicked = (id) => {
+    const { dispatch } = this.props
+    dispatch(push(`/case/new?unit=${id}`))
+  }
+
+  handleUnitClicked = (id) => {
+    const { dispatch } = this.props
+    dispatch(push(`/unit/${id}`))
+  }
+
+  onSearchChanged = (searchText) => {
+    this.setState({searchText})
+    if (searchText === '') {
+      this.setState({searchMode: false})
+    } else {
+      this.setState({searchMode: true})
+      const matcher = new RegExp(searchText, 'i')
+      const searchResult = this.props.unitList
+        .filter(unit => !matcher || (unit.name && unit.name.match(matcher)))
+      this.setState({
+        searchResult: searchResult
+      })
+    }
+  }
+
+  get filteredUnits () {
+    const { selectedStatusFilter, sortBy, selectedRoleFilter } = this.state
+    const { unitList, currentUserId } = this.props
+    let statusFilter
+    switch (selectedStatusFilter) {
+      case 'All':
+        statusFilter = unitItem => true
+        break
+      case 'Active':
+        statusFilter = unitItem => unitItem.is_active
+        break
+      case 'Disabled':
+        statusFilter = unitItem => !unitItem.is_active
+        break
+      default:
+        statusFilter = unitItem => unitItem.is_active
+    }
+    let roleFilter
+    switch (selectedRoleFilter) {
+      case 'All':
+        roleFilter = unitItem => true
+        break
+      case 'Created':
+        roleFilter = unitItem => unitItem.metaData && unitItem.metaData.ownerIds && unitItem.metaData.ownerIds[0] === currentUserId
+        break
+      case 'Involved':
+        roleFilter = unitItem => ((unitItem.metaData && !unitItem.metaData.ownerIds) || (unitItem.metaData && !unitItem.metaData.ownerIds && !unitItem.metaData.ownerIds[0] === currentUserId))
+        break
+      default:
+        roleFilter = unitItem => true
+    }
+    const filteredUnits = unitList.filter(unitItem => roleFilter(unitItem) && statusFilter(unitItem)).sort(sorters[sortBy])
+    return filteredUnits
+  }
+
+  render () {
+    const { isLoading, dispatch } = this.props
+    const { filteredUnits } = this
+    const { searchResult, searchMode, searchText, selectedStatusFilter, selectedRoleFilter, sortBy } = this.state
+    if (isLoading) return <Preloader />
     return (
       <div className='flex flex-column flex-grow full-height'>
-        <RootAppBar title='My Units' onIconClick={() => dispatch(setDrawerState(true))} />
-        <div className='flex flex-column flex-grow pa3 bg-very-light-gray'>
-          <div className='br2 bg-white card-shadow-1 w-100 pt2 flex flex-column'>
-            <div className='ph2 flex flex-column'>
-              <h4 className='semi-dark-gray ma0 ml1 fw5 lh-title no-shrink'>ALL UNITS</h4>
-              <div className='overflow-auto pb2'>
-                {unitList.length === 0 ? (
-                  <div className='f6 i silver ba b--moon-gray mt2 pa2 tc br1'>
-                    You have no units managed with Unee-T yet
-                  </div>
-                ) : unitList.map(({ id, name, description }) => (
-                  <MenuItem key={id} innerDivStyle={{padding: 0}} onClick={() => dispatch(push(`/unit/${id}`))}>
-                    <div className='mt2 ba b--moon-gray br1 w-100 flex items-center pa2'>
-                      <FontIcon className='material-icons' color='var(--semi-dark-gray)'>home</FontIcon>
-                      <div className='ml3 mv1 semi-dark-gray lh-copy overflow-hidden'>
-                        <div className='ti1 ellipsis'>{name}</div>
-                        <div className='ti1 ellipsis'>{description}</div>
-                      </div>
-                    </div>
-                  </MenuItem>
-                ))}
+        <RootAppBar
+          title='My Units'
+          placeholder='Search units...'
+          onIconClick={() => dispatch(setDrawerState(true))}
+          shadowless
+          searchText={searchText}
+          onSearchChanged={this.onSearchChanged}
+          showSearch
+        />
+        <UnverifiedWarning />
+        { searchMode ? (
+          <FilteredUnits filteredUnits={searchResult}
+            handleUnitClicked={this.handleUnitClicked}
+          />
+        ) : (
+          <div className='flex-grow flex flex-column overflow-hidden'>
+            <div className='flex bg-very-light-gray'>
+              <StatusFilter
+                selectedStatusFilter={selectedStatusFilter}
+                onFilterClicked={this.handleStatusFilterClicked}
+                status={['All', 'Active', 'Disabled']}
+              />
+              <RoleFilter
+                selectedRoleFilter={selectedRoleFilter}
+                onRoleFilterClicked={this.handleRoleFilterClicked}
+                roles={['All', 'Created', 'Involved']}
+              />
+              <Sorter
+                onSortClicked={this.handleSortClicked}
+                sortBy={sortBy}
+                labels={[
+                  [SORT_BY.NAME_ASCENDING, {category: 'Name (A to Z)', selected: 'Name ↑'}],
+                  [SORT_BY.NAME_DESCENDING, {category: 'Name (Z to A)', selected: 'Name ↓'}]
+                ]}
+              />
+            </div>
+            <div className='flex-grow flex flex-column overflow-auto'>
+              <div className='flex-grow bb b--very-light-gray bg-white pb6'>
+                { filteredUnits.length === 0 ? (
+                  <NoItemMsg item={'unit'} iconType={'location_on'} />
+                ) : (
+                  <FilteredUnits
+                    filteredUnits={filteredUnits}
+                    handleUnitClicked={this.handleUnitClicked}
+                    handleAddCaseClicked={this.handleAddCaseClicked}
+                    showAddBtn
+                  />
+                )
+                }
               </div>
             </div>
-            <Link to='/unit/new' className='link'>
-              <MenuItem className='no-shrink' innerDivStyle={{padding: 0}}>
-                <div className='tc bondi-blue fw5 bt b--moon-gray'>
-                  Add Unit
-                </div>
-              </MenuItem>
-            </Link>
           </div>
+        ) }
+        <div className='absolute bottom-2 right-2'>
+          <FloatingActionButton
+            onClick={() => dispatch(push(`/unit/new`))}
+          >
+            <FontIcon className='material-icons'>add</FontIcon>
+          </FloatingActionButton>
         </div>
       </div>
     )
@@ -59,7 +185,8 @@ class UnitExplorer extends Component {
 UnitExplorer.propTypes = {
   unitList: PropTypes.array,
   isLoading: PropTypes.bool,
-  unitsError: PropTypes.object
+  unitsError: PropTypes.object,
+  currentUserId: PropTypes.string
 }
 
 let unitsError
@@ -69,13 +196,15 @@ export default connect(
   () => {
     const unitsHandle = Meteor.subscribe(`${collectionName}.forBrowsing`, {
       onStop: (error) => {
-        console.log('There is an error', error)
         unitsError = error
       }
     })
     return {
-      unitList: Units.find().fetch(),
+      unitList: Units.find().fetch().map(unit => Object.assign({}, unit, {
+        metaData: unit.metaData()
+      })),
       isLoading: !unitsHandle.ready(),
+      currentUserId: Meteor.userId(),
       unitsError
     }
   }, // Meteor data to props

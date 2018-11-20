@@ -1,4 +1,4 @@
-const generalReplacer = (url, paramsStr) => url.replace(/\/upload\/[^/]*\//, `/upload/${paramsStr}/`)
+const generalReplacer = (url, paramsStr) => url.replace(/\/upload\/[^/]*\//, `/upload/f_auto/${paramsStr}/`)
 
 export const matchWidth = (url, pixelWidth) => generalReplacer(url, `w_${pixelWidth}`)
 export const fitDimensions = (url, pixelWidth, pixelHeight) =>

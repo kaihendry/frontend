@@ -1,6 +1,6 @@
 # Unee-T
 
-<img src="https://media.dev.unee-t.com/2018-11-26/overview.png" alt="Overview">
+<img src="https://media.dev.unee-t.com/2018-12-10/Unee-T_high_level_architecture.png" alt="Overview">
 
 * [How to test with Bugzilla in a local environment](https://unee-t-media.s3-accelerate.amazonaws.com/frontend/MEFE.mp4)
 * [ECS deploy](https://unee-t-media.s3-accelerate.amazonaws.com/2017/ecs-deploy.mp4) with `./deploy.sh`

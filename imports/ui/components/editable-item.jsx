@@ -1,8 +1,9 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
-import TextField from 'material-ui/TextField'
 import SelectField from 'material-ui/SelectField'
 import MenuItem from 'material-ui/MenuItem'
+
+import StickyTextField from './sticky-text-field'
 
 import {
   textInputStyle,
@@ -21,14 +22,14 @@ export default class EditableItem extends Component {
   }
   componentWillReceiveProps (nextProps) {
     if (nextProps.initialValue !== this.props.initialValue && Date.now() - this.lastEditTime > 2000) {
-      this.setState({value: nextProps.initialValue})
+      this.setState({ value: nextProps.initialValue })
     }
     if (nextProps.currentValue !== this.props.currentValue) {
-      this.setState({value: nextProps.currentValue})
+      this.setState({ value: nextProps.currentValue })
     }
   }
   handleEdit = (value) => {
-    this.setState({value})
+    this.setState({ value })
     this.lastEditTime = Date.now()
     this.props.onEdit(value)
   }
@@ -38,7 +39,7 @@ export default class EditableItem extends Component {
 
     if (!selectionList) {
       return (
-        <TextField
+        <StickyTextField
           id={name}
           floatingLabelText={label}
           floatingLabelShrinkStyle={textInputFloatingLabelStyle}
@@ -49,7 +50,7 @@ export default class EditableItem extends Component {
           multiLine={isMultiLine}
           underlineShow={typeof underlineShow === 'boolean' ? underlineShow : true}
           value={value}
-          ref={inpRef}
+          inpRef={inpRef}
           onChange={({ target: { value } }) => this.handleEdit(value)}
         />
       )

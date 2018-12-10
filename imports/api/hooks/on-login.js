@@ -17,7 +17,7 @@ Accounts.onLogin(info => {
     if (user.profile.isLimited) {
       logger.info(`resetting the password for ${user.emails[0].address} after one-time usage by invitation`)
       const randPass = randToken.generate(12)
-      Accounts.setPassword(user._id, randPass, {logout: false})
+      Accounts.setPassword(user._id, randPass, { logout: false })
     }
   }
 })

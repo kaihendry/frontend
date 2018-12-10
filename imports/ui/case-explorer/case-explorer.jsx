@@ -11,6 +11,7 @@ import memoizeOne from 'memoize-one'
 import Cases, { collectionName, isClosed } from '../../api/cases'
 import CaseNotifications, { collectionName as notifCollName } from '../../api/case-notifications'
 import UnitMetaData from '../../api/unit-meta-data'
+import Units, { collectionName as unitCollName } from '../../api/units'
 import RootAppBar from '../components/root-app-bar'
 import Preloader from '../preloader/preloader'
 import { NoItemMsg } from '../explorer-components/no-item-msg'
@@ -56,9 +57,9 @@ class CaseExplorer extends Component {
     dispatch(push(`/case/new?unit=${unitId}`))
   }
 
-  componentWillReceiveProps ({isLoading, casesError, caseList}) {
+  componentWillReceiveProps ({ isLoading, casesError, caseList }) {
     if (!isLoading && !casesError && isLoading !== this.props.isLoading) {
-      this.props.dispatchLoadingResult({caseList})
+      this.props.dispatchLoadingResult({ caseList })
     }
   }
   makeCaseUpdateTimeDict = memoizeOne(
@@ -74,7 +75,7 @@ class CaseExplorer extends Component {
   makeCaseUnreadDict = memoizeOne(
     unreadNotifs => unreadNotifs.reduce((dict, curr) => {
       const caseIdStr = curr.caseId.toString()
-      const unreadItem = dict[caseIdStr] = dict[caseIdStr] || {messages: 0, updates: 0}
+      const unreadItem = dict[caseIdStr] = dict[caseIdStr] || { messages: 0, updates: 0 }
       switch (curr.type) {
         case 'message':
           unreadItem.messages++
@@ -95,9 +96,9 @@ class CaseExplorer extends Component {
       // Building a unit dictionary to group the cases together
       const unitsDict = caseList.reduce((dict, caseItem) => {
         if (assignedFilter(caseItem) && !isClosed(caseItem)) { // Filtering only the cases that match the selection
-          const { selectedUnit: unitTitle, selectedUnitBzId: bzId, unitType } = caseItem
+          const { selectedUnit: unitTitle, selectedUnitBzId: bzId, unitType, isActive } = caseItem
           // Pulling the existing or creating a new dictionary entry if none
-          const unitDesc = dict[unitTitle] = dict[unitTitle] || {cases: [], bzId, unitType}
+          const unitDesc = dict[unitTitle] = dict[unitTitle] || { cases: [], bzId, unitType, isActive }
           const caseIdStr = caseItem.id.toString()
 
           // Adding the latest update time to the case for easier sorting later
@@ -112,7 +113,7 @@ class CaseExplorer extends Component {
       }, {})
       const sortType = sortBy ? sorters[sortBy] : sorters[SORT_BY.LATEST_UPDATE]
       return Object.keys(unitsDict).reduce((all, unitTitle) => {
-        const { bzId, cases, unitType } = unitsDict[unitTitle]
+        const { bzId, cases, unitType, isActive } = unitsDict[unitTitle]
         // Sorting cases within a unit by the order descending order of last update
         cases.sort(sortType)
         all.push({
@@ -121,7 +122,8 @@ class CaseExplorer extends Component {
           items: cases,
           unitType,
           unitTitle,
-          bzId
+          bzId,
+          isActive
         })
         return all
       }, []).sort(sortType)
@@ -169,8 +171,8 @@ class CaseExplorer extends Component {
             onSortClicked={this.handleSortClicked}
             sortBy={sortBy}
             labels={labels.concat([
-              [SORT_BY.LATEST_UPDATE, {category: 'Updated - Latest', selected: 'Updated ↓'}],
-              [SORT_BY.OLDEST_UPDATE, {category: 'Updated - Oldest', selected: 'Updated ↑'}]
+              [SORT_BY.LATEST_UPDATE, { category: 'Updated - Latest', selected: 'Updated ↓' }],
+              [SORT_BY.OLDEST_UPDATE, { category: 'Updated - Oldest', selected: 'Updated ↑' }]
             ])}
           />
         </div>
@@ -178,7 +180,7 @@ class CaseExplorer extends Component {
           { !isLoading && caseGrouping.length
             ? <UnitGroupList
               unitGroupList={caseGrouping}
-              expandedListRenderer={({allItems}) => (
+              expandedListRenderer={({ allItems }) => (
                 <CaseList
                   allCases={allItems}
                   onItemClick={this.handleOnItemClicked}
@@ -189,12 +191,12 @@ class CaseExplorer extends Component {
           }
         </div>
         <div className='absolute right-1 bottom-2'>
-          <FloatingActionButton onClick={() => this.setState({open: true})}>
+          <FloatingActionButton onClick={() => this.setState({ open: true })}>
             <FontIcon className='material-icons'>add</FontIcon>
           </FloatingActionButton>
           <UnitSelectDialog
             show={open}
-            onDismissed={() => this.setState({open: false})}
+            onDismissed={() => this.setState({ open: false })}
             onUnitClick={this.handleOnUnitClicked}
           />
         </div>
@@ -213,31 +215,39 @@ CaseExplorer.propTypes = {
 }
 
 let casesError
+let unitsError
 const connectedWrapper = connect(
   () => ({}) // map redux state to props
 )(createContainer(() => { // map meteor state to props
-  const casesHandle = Meteor.subscribe(`${collectionName}.associatedWithMe`, {showOpenOnly: true}, {
+  const casesHandle = Meteor.subscribe(`${collectionName}.associatedWithMe`, { showOpenOnly: true }, {
     onStop: (error) => {
       casesError = error
     }
   })
   const notifsHandle = Meteor.subscribe(`${notifCollName}.myUpdates`)
+  const unitsHandle = Meteor.subscribe(`${unitCollName}.forBrowsing`, {
+    onStop: (error) => {
+      unitsError = error
+    }
+  })
   return {
     caseList: Cases.find().fetch().map(caseItem => Object.assign({}, caseItem, {
-      unitType: (UnitMetaData.findOne({bzName: caseItem.selectedUnit}) || {}).unitType,
-      selectedUnitBzId: (UnitMetaData.findOne({bzName: caseItem.selectedUnit}) || {}).bzId
+      unitType: (UnitMetaData.findOne({ bzName: caseItem.selectedUnit }) || {}).unitType,
+      selectedUnitBzId: (UnitMetaData.findOne({ bzName: caseItem.selectedUnit }) || {}).bzId,
+      isActive: (Units.findOne({ name: caseItem.selectedUnit }) || {}).is_active
     })),
     allNotifications: notifsHandle.ready() ? CaseNotifications.find().fetch() : [],
     unreadNotifications: notifsHandle.ready() ? CaseNotifications.find({
-      markedAsRead: {$ne: true}
+      markedAsRead: { $ne: true }
     }).fetch() : [],
-    isLoading: !casesHandle.ready() || !notifsHandle.ready(),
+    isLoading: !casesHandle.ready() || !notifsHandle.ready() || !unitsHandle.ready(),
     currentUser: Meteor.subscribe('users.myBzLogin').ready() ? Meteor.user() : null,
-    casesError
+    casesError,
+    unitsError
   }
 }, CaseExplorer))
 
-connectedWrapper.MobileHeader = ({onIconClick}) => (
+connectedWrapper.MobileHeader = ({ onIconClick }) => (
   <RootAppBar title='Open Cases' onIconClick={onIconClick} />
 )
 

@@ -19,6 +19,7 @@ import { SORT_BY, sorters } from '../explorer-components/sort-items'
 import { Sorter } from '../explorer-components/sorter'
 import { StatusFilter } from '../explorer-components/status-filter'
 import { RoleFilter } from '../explorer-components/role-filter'
+import Units, { collectionName as unitCollName } from '../../api/units'
 
 class ReportExplorer extends Component {
   constructor () {
@@ -75,26 +76,25 @@ class ReportExplorer extends Component {
       const creatorFilter = selectedRoleFilter !== 'Created by me' ? report => true : report => report.assignee === this.props.currentUser.bugzillaCreds.login
       const unitDict = reportList.reduce((dict, reportItem) => {
         if (creatorFilter(reportItem)) {
-          const { selectedUnit: unitBzName, unitMetaData: metaData } = reportItem
+          const { selectedUnit: unitBzName, unitMetaData: metaData, isActive } = reportItem
           const unitType = metaData ? metaData.unitType : 'not_listed'
           const bzId = metaData ? metaData.bzId : 'not_listed'
           const unitTitle = metaData && metaData.displayName ? metaData.displayName : unitBzName
-          const unitDesc = dict[unitBzName] = dict[unitBzName] || {items: [], unitType, bzId, unitTitle}
+          const unitDesc = dict[unitBzName] = dict[unitBzName] || { items: [], unitType, bzId, unitTitle, isActive }
           unitDesc.items.push(reportItem)
         }
         return dict
       }, {})
 
       const reportBundle = Object.keys(unitDict).reduce((all, unitTitle) => {
-        const { bzId, items, unitType } = unitDict[unitTitle]
+        const { items, ...attrs } = unitDict[unitTitle]
 
         // Sorting items within a unit by the order descending order of last update
         items.sort(sorters[sortBy])
         all.push({
           items: items,
-          unitType,
           unitTitle,
-          bzId
+          ...attrs
         })
         return all
       }, []) // Sorting by the latest case update for each
@@ -133,7 +133,7 @@ class ReportExplorer extends Component {
             { reportGrouping.length
               ? <UnitGroupList
                 unitGroupList={reportGrouping}
-                expandedListRenderer={({allItems}) => (
+                expandedListRenderer={({ allItems }) => (
                   <ReportList
                     allReports={allItems}
                     onItemClick={this.handleOnItemClicked}
@@ -144,12 +144,12 @@ class ReportExplorer extends Component {
             }
           </div>
           <div className='absolute right-1 bottom-2'>
-            <FloatingActionButton onClick={() => this.setState({open: true})}>
+            <FloatingActionButton onClick={() => this.setState({ open: true })}>
               <FontIcon className='material-icons'>add</FontIcon>
             </FloatingActionButton>
             <UnitSelectDialog
               show={open}
-              onDismissed={() => this.setState({open: false})}
+              onDismissed={() => this.setState({ open: false })}
               onUnitClick={this.handleOnUnitClicked}
             />
           </div>
@@ -164,6 +164,7 @@ ReportExplorer.propTypes = {
 }
 
 let reportsError
+let unitsError
 export default connect(
   () => ({}) // map redux state to props
 )(createContainer(() => { // map meteor state to props
@@ -172,13 +173,20 @@ export default connect(
       reportsError = error
     }
   })
+  const unitsHandle = Meteor.subscribe(`${unitCollName}.forBrowsing`, {
+    onStop: (error) => {
+      unitsError = error
+    }
+  })
   return {
     reportList: Reports.find().fetch().map(report => ({
+      isActive: (Units.findOne({ name: report.selectedUnit }) || {}).is_active,
       unitMetaData: report.unitMetaData(),
       ...report
     })),
-    isLoading: !reportsHandle.ready(),
+    isLoading: !reportsHandle.ready() || !unitsHandle.ready(),
     currentUser: Meteor.subscribe('users.myBzLogin').ready() ? Meteor.user() : null,
-    reportsError
+    reportsError,
+    unitsError
   }
 }, ReportExplorer))

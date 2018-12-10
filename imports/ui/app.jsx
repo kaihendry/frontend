@@ -54,7 +54,7 @@ class App extends Component {
               <Route exact path='/notification-settings' component={NotificationSettings} />
               <Route exact path='/report/:reportId/preview' component={ReportPreview} />
               <Route path='/report/:reportId/sign' component={ReportSignage} />
-`             <Route exact path='/report/:reportId/draft' component={ReportWizard} />
+`             <Route path='/report/:reportId/draft' component={ReportWizard} />
 `             <Route exact path='/report/:reportId/share' component={ReportShare} />
 `             <Route path='/report' component={ReportExplorer} />
               <Route exact path='/case/new' component={CaseWizard} />
@@ -93,7 +93,7 @@ App.propTypes = {
 
 // export default App
 export default withRouter(connect(
-  ({ genericErrorState }) => ({errors: genericErrorState}) // map redux state to props
+  ({ genericErrorState }) => ({ errors: genericErrorState }) // map redux state to props
 )(createContainer(() => ({ // map meteor state to props
   userLoggedIn: !!Meteor.userId()
 }), App)))

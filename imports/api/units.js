@@ -234,7 +234,7 @@ if (Meteor.isServer) {
           this.error(new Meteor.Error({ message: 'REST API error', origError: e }))
         }
       }
-      if (ids && ids.length === 0) {
+      if (ids.length === 0) {
         this.ready()
       } else {
         associationFactory(

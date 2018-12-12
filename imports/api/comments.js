@@ -11,8 +11,8 @@ export const collectionName = 'comments'
 // Exported for testing purposes
 export const factoryOptions = {
   collectionName,
-  dataResolver: (data, claimId) => {
-    return data.bugs[claimId.toString()].comments
+  dataResolver: (data, caseId) => {
+    return data.bugs[caseId.toString()].comments
   }
 }
 
@@ -30,6 +30,18 @@ if (Meteor.isServer) {
       }),
       withUsers(commentItem => [commentItem.creator])
     )
+  )
+
+  Meteor.publish(
+    `${collectionName}.byId`,
+    publicationFactory({
+      collectionName,
+      dataResolver: (data, commentId) => {
+        return data.comments[commentId.toString()]
+      }
+    }).publishById({
+      uriTemplate: id => `/rest/bug/comment/${id}`
+    })
   )
   FailedComments = new Mongo.Collection('failedComments')
 }

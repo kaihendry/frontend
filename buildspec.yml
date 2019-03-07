@@ -27,3 +27,8 @@ phases:
     commands:
       - docker push ${ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/${APP}:$CODEBUILD_RESOLVED_SOURCE_VERSION
       - docker push ${ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/${APP}:latest
+
+# https://aws.amazon.com/blogs/devops/improve-build-performance-and-save-time-using-local-caching-in-aws-codebuild/
+cache:
+  paths:
+   - 'node_modules/**/*'

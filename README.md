@@ -103,11 +103,11 @@ If your Frontend datastore MongoDB out of sync with your [Bugzilla database's
 profiles](https://documentation.unee-t.com/2018/03/01/introduction-to-the-demo-environment/),
 you need to create the users in the users manually:
 
-	Accounts.createUser({ email: 'leonel@mailinator.com', password: 'leonel', profile: { bzLogin: 'leonel@mailinator.com', bzPass: 'leonel' }})
+	Accounts.createUser({ email: 'leonel@case.dev.unee-t.com', password: 'leonel', profile: { bzLogin: 'leonel@case.dev.unee-t.com', bzPass: 'leonel' }})
 
 Ensure it worked by looking at the `npm start` log. Next you might want to verify each user's email address.
 
-	db.users.update({'emails.address': 'leonel@mailinator.com'}, {$set : {'emails.0.verified': true}})
+	db.users.update({'emails.address': 'leonel@case.dev.unee-t.com'}, {$set : {'emails.0.verified': true}})
 
 ## How to test the notifications / email templates?
 

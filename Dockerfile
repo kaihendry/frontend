@@ -13,6 +13,7 @@ RUN curl -o $TMP_DIR/meteor.sh 'https://install.meteor.com?release=1.8.1'; sh $T
 
 ENV PATH="/home/node/.meteor:${PATH}"
 WORKDIR $SRC_DIR
+RUN npm install
 RUN meteor npm install --production
 RUN meteor build --server-only --directory $BUNDLE_DIR
 RUN cd ${BUNDLE_DIR}/bundle/programs/server && npm install

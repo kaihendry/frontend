@@ -24,6 +24,7 @@ phases:
 
   post_build:
     commands:
+      - if [ -z "$CODEBUILD_BUILD_SUCCEEDING" ]; then echo "Build Failing"; exit 1; else echo "CODEBUILD_BUILD_SUCCEEDING=$CODEBUILD_BUILD_SUCCEEDING"; fi
       - echo Build complete on `date`
       - echo Pushing build to Docker Hub...
       - docker push $IMAGE_REPO_NAME:latest
